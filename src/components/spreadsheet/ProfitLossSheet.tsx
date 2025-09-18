@@ -1,0 +1,244 @@
+import { useState } from "react";
+import { EditableTable, TableColumn, TableRow } from "./EditableTable";
+
+export const ProfitLossSheet = () => {
+  const [plData, setPLData] = useState<TableRow[]>([
+    {
+      id: "pl_1",
+      month: "2024-01",
+      revenueTotal: 26700,
+      expensesTotal: 4449,
+      netProfit: 0, // Will be calculated
+      profitMargin: 0 // Will be calculated
+    },
+    {
+      id: "pl_2", 
+      month: "2023-12",
+      revenueTotal: 24500,
+      expensesTotal: 4200,
+      netProfit: 0, // Will be calculated
+      profitMargin: 0 // Will be calculated
+    },
+    {
+      id: "pl_3",
+      month: "2023-11", 
+      revenueTotal: 22800,
+      expensesTotal: 3950,
+      netProfit: 0, // Will be calculated
+      profitMargin: 0 // Will be calculated
+    }
+  ]);
+
+  const columns: TableColumn[] = [
+    {
+      key: "month",
+      label: "Month",
+      type: "text",
+      required: true
+    },
+    {
+      key: "revenueTotal",
+      label: "Revenue Total",
+      type: "currency",
+      required: true
+    },
+    {
+      key: "expensesTotal",
+      label: "Expenses Total", 
+      type: "currency",
+      required: true
+    },
+    {
+      key: "netProfit",
+      label: "Net Profit",
+      type: "currency",
+      formula: (row) => Number(row.revenueTotal || 0) - Number(row.expensesTotal || 0)
+    },
+    {
+      key: "profitMargin",
+      label: "Profit Margin %",
+      type: "percentage",
+      formula: (row) => {
+        const revenue = Number(row.revenueTotal || 0);
+        const expenses = Number(row.expensesTotal || 0);
+        const netProfit = revenue - expenses;
+        return revenue > 0 ? (netProfit / revenue) * 100 : 0;
+      }
+    }
+  ];
+
+  // Calculate totals and averages
+  const totalRevenue = plData.reduce((sum, row) => sum + Number(row.revenueTotal || 0), 0);
+  const totalExpenses = plData.reduce((sum, row) => sum + Number(row.expensesTotal || 0), 0);
+  const totalNetProfit = totalRevenue - totalExpenses;
+  const avgProfitMargin = totalRevenue > 0 ? (totalNetProfit / totalRevenue) * 100 : 0;
+
+  // Calculate month-over-month growth
+  const getGrowthRate = () => {
+    if (plData.length < 2) return 0;
+    const sortedData = [...plData].sort((a, b) => a.month.localeCompare(b.month));
+    const latest = sortedData[sortedData.length - 1];
+    const previous = sortedData[sortedData.length - 2];
+    const latestProfit = Number(latest.revenueTotal || 0) - Number(latest.expensesTotal || 0);
+    const previousProfit = Number(previous.revenueTotal || 0) - Number(previous.expensesTotal || 0);
+    
+    if (previousProfit === 0) return latestProfit > 0 ? 100 : 0;
+    return ((latestProfit - previousProfit) / Math.abs(previousProfit)) * 100;
+  };
+
+  const growthRate = getGrowthRate();
+
+  return (
+    <div className="space-y-6">
+      {/* P&L Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="p-4 rounded-lg bg-success/10 border border-success/20">
+          <div className="text-sm text-success font-medium">Total Revenue</div>
+          <div className="text-2xl font-bold text-financial text-success">
+            ${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          </div>
+        </div>
+        <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+          <div className="text-sm text-destructive font-medium">Total Expenses</div>
+          <div className="text-2xl font-bold text-financial text-destructive">
+            ${totalExpenses.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          </div>
+        </div>
+        <div className={`p-4 rounded-lg border ${
+          totalNetProfit >= 0 
+            ? 'bg-success/10 border-success/20' 
+            : 'bg-destructive/10 border-destructive/20'
+        }`}>
+          <div className={`text-sm font-medium ${
+            totalNetProfit >= 0 ? 'text-success' : 'text-destructive'
+          }`}>Total Net Profit</div>
+          <div className={`text-2xl font-bold text-financial ${
+            totalNetProfit >= 0 ? 'text-success' : 'text-destructive'
+          }`}>
+            ${totalNetProfit.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          </div>
+        </div>
+        <div className={`p-4 rounded-lg border ${
+          avgProfitMargin >= 0 
+            ? 'bg-accent/10 border-accent/20' 
+            : 'bg-warning/10 border-warning/20'
+        }`}>
+          <div className={`text-sm font-medium ${
+            avgProfitMargin >= 0 ? 'text-accent' : 'text-warning'
+          }`}>Avg Profit Margin</div>
+          <div className={`text-2xl font-bold text-financial ${
+            avgProfitMargin >= 0 ? 'text-accent' : 'text-warning'
+          }`}>
+            {avgProfitMargin.toFixed(1)}%
+          </div>
+        </div>
+      </div>
+
+      {/* Growth Indicator */}
+      <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-sm text-muted-foreground">Month-over-Month Growth</div>
+            <div className={`text-lg font-bold text-financial ${
+              growthRate > 0 ? 'text-success' : growthRate < 0 ? 'text-destructive' : 'text-muted-foreground'
+            }`}>
+              {growthRate > 0 ? '+' : ''}{growthRate.toFixed(1)}%
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-sm text-muted-foreground">Performance Status</div>
+            <div className={`text-sm font-medium ${
+              avgProfitMargin >= 20 ? 'text-success' :
+              avgProfitMargin >= 10 ? 'text-warning' : 'text-destructive'
+            }`}>
+              {avgProfitMargin >= 20 ? 'Excellent' :
+               avgProfitMargin >= 10 ? 'Good' :
+               avgProfitMargin >= 0 ? 'Fair' : 'Poor'}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* P&L Table */}
+      <EditableTable
+        title="Profit & Loss Statement"
+        columns={columns}
+        data={plData}
+        onDataChange={setPLData}
+        addButtonText="Add Monthly P&L"
+      />
+
+      {/* Financial Ratios */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="p-6 card-elegant">
+          <h4 className="font-semibold mb-4">Key Financial Ratios</h4>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Revenue Growth Rate</span>
+              <span className={`text-financial font-semibold ${
+                growthRate > 0 ? 'text-success' : growthRate < 0 ? 'text-destructive' : 'text-muted-foreground'
+              }`}>
+                {growthRate.toFixed(1)}%
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Expense Ratio</span>
+              <span className="text-financial font-semibold">
+                {totalRevenue > 0 ? ((totalExpenses / totalRevenue) * 100).toFixed(1) : '0.0'}%
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Operating Margin</span>
+              <span className={`text-financial font-semibold ${
+                avgProfitMargin >= 15 ? 'text-success' :
+                avgProfitMargin >= 5 ? 'text-warning' : 'text-destructive'
+              }`}>
+                {avgProfitMargin.toFixed(1)}%
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Break-even Point</span>
+              <span className="text-financial font-semibold">
+                ${totalExpenses.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 card-elegant">
+          <h4 className="font-semibold mb-4">Monthly Performance Trend</h4>
+          <div className="space-y-3">
+            {plData
+              .sort((a, b) => b.month.localeCompare(a.month))
+              .slice(0, 6)
+              .map((month) => {
+                const netProfit = Number(month.revenueTotal || 0) - Number(month.expensesTotal || 0);
+                const profitMargin = Number(month.revenueTotal || 0) > 0 ? 
+                  (netProfit / Number(month.revenueTotal || 0)) * 100 : 0;
+                
+                return (
+                  <div key={month.id} className="flex items-center justify-between">
+                    <span className="text-sm">{month.month}</span>
+                    <div className="flex items-center gap-3">
+                      <span className={`text-xs px-2 py-1 rounded ${
+                        profitMargin >= 15 ? 'bg-success/20 text-success' :
+                        profitMargin >= 5 ? 'bg-warning/20 text-warning' : 
+                        'bg-destructive/20 text-destructive'
+                      }`}>
+                        {profitMargin.toFixed(1)}%
+                      </span>
+                      <span className={`text-financial font-semibold ${
+                        netProfit >= 0 ? 'text-success' : 'text-destructive'
+                      }`}>
+                        ${netProfit.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

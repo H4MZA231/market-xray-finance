@@ -1,7 +1,7 @@
-import Dashboard from "@/components/Dashboard";
+import { SpreadsheetView } from "@/components/SpreadsheetView";
 
 const Index = () => {
-  return <Dashboard />;
+  return <SpreadsheetView />;
 };
 
 export default Index;
