@@ -35,42 +35,43 @@ export const SpreadsheetView = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background p-4">
+    <div className="min-h-screen bg-background p-2 sm:p-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-accent/10 rounded-lg">
-              <FileSpreadsheet className="w-6 h-6 text-accent" />
+        <div className="mb-4 sm:mb-6">
+          <div className="flex items-center gap-2 sm:gap-3 mb-2">
+            <div className="p-1.5 sm:p-2 bg-accent/10 rounded-lg">
+              <FileSpreadsheet className="w-5 h-5 sm:w-6 sm:h-6 text-accent" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Business Finance Spreadsheet</h1>
-              <p className="text-muted-foreground">Fully editable financial tracking and analysis</p>
+              <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-foreground">Business Finance Spreadsheet</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground">Fully editable financial tracking and analysis</p>
             </div>
           </div>
         </div>
 
         {/* Spreadsheet Tabs */}
-        <Card className="card-elegant p-1">
+        <Card className="card-elegant p-0.5 sm:p-1">
           <Tabs value={activeSheet} onValueChange={setActiveSheet} className="w-full">
-            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 gap-1 bg-secondary/50 p-1">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-0.5 sm:gap-1 bg-secondary/50 p-0.5 sm:p-1 h-auto">
               {sheets.map((sheet) => {
                 const Icon = sheet.icon;
                 return (
                   <TabsTrigger 
                     key={sheet.id} 
                     value={sheet.id}
-                    className="flex items-center gap-2 px-3 py-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
+                    className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-1 sm:px-3 py-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm min-h-[60px] sm:min-h-[40px]"
                   >
-                    <Icon className={`w-4 h-4 ${sheet.color}`} />
-                    <span className="hidden sm:inline">{sheet.label}</span>
-                    <span className="sm:hidden">{sheet.label.split('/')[0]}</span>
+                    <Icon className={`w-4 h-4 ${sheet.color} flex-shrink-0`} />
+                    <span className="text-center text-[10px] sm:text-xs leading-tight sm:leading-normal">
+                      {sheet.label.split('/')[0]}
+                    </span>
                   </TabsTrigger>
                 );
               })}
             </TabsList>
 
-            <div className="mt-4">
+            <div className="mt-2 sm:mt-4">
               <TabsContent value="dashboard" className="mt-0">
                 <DashboardSheet />
               </TabsContent>

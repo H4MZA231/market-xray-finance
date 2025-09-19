@@ -156,7 +156,7 @@ export const EditableTable = ({
         case 'select':
           return (
             <Select value={value} onValueChange={(val) => handleFieldChange(column.key, val)}>
-              <SelectTrigger className="h-8 text-xs">
+              <SelectTrigger className="h-9 sm:h-8 text-xs min-w-[100px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -172,7 +172,7 @@ export const EditableTable = ({
               type="date"
               value={value}
               onChange={(e) => handleFieldChange(column.key, e.target.value)}
-              className="h-8 text-xs"
+              className="h-9 sm:h-8 text-xs min-w-[120px]"
             />
           );
         case 'currency':
@@ -184,7 +184,7 @@ export const EditableTable = ({
               step={column.type === 'currency' ? '0.01' : column.type === 'percentage' ? '0.1' : '1'}
               value={value}
               onChange={(e) => handleFieldChange(column.key, e.target.value)}
-              className="h-8 text-xs"
+              className="h-9 sm:h-8 text-xs min-w-[100px]"
             />
           );
         default:
@@ -192,7 +192,7 @@ export const EditableTable = ({
             <Input
               value={value}
               onChange={(e) => handleFieldChange(column.key, e.target.value)}
-              className="h-8 text-xs"
+              className="h-9 sm:h-8 text-xs min-w-[100px]"
             />
           );
       }
@@ -216,70 +216,74 @@ export const EditableTable = ({
   };
 
   return (
-    <Card className={cn("card-elegant p-6", className)}>
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-semibold">{title}</h3>
-        <Button onClick={handleAdd} className="flex items-center gap-2">
+    <Card className={cn("card-elegant p-3 sm:p-6", className)}>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 mb-4 sm:mb-6">
+        <h3 className="text-lg sm:text-xl font-semibold">{title}</h3>
+        <Button onClick={handleAdd} className="flex items-center gap-2 w-full sm:w-auto text-sm">
           <Plus className="w-4 h-4" />
-          {addButtonText}
+          <span className="sm:inline">{addButtonText}</span>
         </Button>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="border-b border-border">
-              {columns.map((column) => (
-                <th key={column.key} className="text-left p-3 text-sm font-medium text-muted-foreground">
-                  {column.label}
-                  {column.required && <span className="text-destructive ml-1">*</span>}
-                </th>
-              ))}
-              <th className="text-left p-3 text-sm font-medium text-muted-foreground">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((row) => (
-              <tr key={row.id} className="border-b border-border/50 hover:bg-secondary/20">
+      <div className="overflow-x-auto -mx-3 sm:mx-0">
+        <div className="min-w-[600px] px-3 sm:px-0">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="border-b border-border">
                 {columns.map((column) => (
-                  <td key={column.key} className="p-3 min-w-[120px]">
-                    {renderCell(row, column)}
-                  </td>
+                  <th key={column.key} className="text-left p-2 sm:p-3 text-xs sm:text-sm font-medium text-muted-foreground min-w-[80px] sm:min-w-[120px]">
+                    <div className="truncate">
+                      {column.label}
+                      {column.required && <span className="text-destructive ml-1">*</span>}
+                    </div>
+                  </th>
                 ))}
-                <td className="p-3">
-                  <div className="flex items-center gap-2">
-                    {editingId === row.id ? (
-                      <>
-                        <Button size="sm" onClick={handleSave} className="h-7 w-7 p-0">
-                          <Save className="w-3 h-3" />
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={handleCancel} className="h-7 w-7 p-0">
-                          <X className="w-3 h-3" />
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Button size="sm" variant="outline" onClick={() => handleEdit(row)} className="h-7 w-7 p-0">
-                          <Edit className="w-3 h-3" />
-                        </Button>
-                        <Button size="sm" variant="destructive" onClick={() => handleDelete(row.id)} className="h-7 w-7 p-0">
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </td>
+                <th className="text-left p-2 sm:p-3 text-xs sm:text-sm font-medium text-muted-foreground min-w-[80px]">Actions</th>
               </tr>
-            ))}
-            {data.length === 0 && (
-              <tr>
-                <td colSpan={columns.length + 1} className="p-8 text-center text-muted-foreground">
-                  No data yet. Click "{addButtonText}" to get started.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {data.map((row) => (
+                <tr key={row.id} className="border-b border-border/50 hover:bg-secondary/20">
+                  {columns.map((column) => (
+                    <td key={column.key} className="p-2 sm:p-3 min-w-[80px] sm:min-w-[120px]">
+                      {renderCell(row, column)}
+                    </td>
+                  ))}
+                  <td className="p-2 sm:p-3">
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      {editingId === row.id ? (
+                        <>
+                          <Button size="sm" onClick={handleSave} className="h-8 w-8 sm:h-7 sm:w-7 p-0 touch-manipulation">
+                            <Save className="w-3 h-3" />
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={handleCancel} className="h-8 w-8 sm:h-7 sm:w-7 p-0 touch-manipulation">
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button size="sm" variant="outline" onClick={() => handleEdit(row)} className="h-8 w-8 sm:h-7 sm:w-7 p-0 touch-manipulation">
+                            <Edit className="w-3 h-3" />
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => handleDelete(row.id)} className="h-8 w-8 sm:h-7 sm:w-7 p-0 touch-manipulation">
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {data.length === 0 && (
+                <tr>
+                  <td colSpan={columns.length + 1} className="p-6 sm:p-8 text-center text-muted-foreground text-sm">
+                    No data yet. Click "{addButtonText}" to get started.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </Card>
   );
