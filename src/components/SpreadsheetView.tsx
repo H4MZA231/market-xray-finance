@@ -35,35 +35,40 @@ export const SpreadsheetView = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background p-2 sm:p-4">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-background p-1 xs:p-2 sm:p-4 md:p-6">
+      <div className="max-w-full xl:max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-4 sm:mb-6">
-          <div className="flex items-center gap-2 sm:gap-3 mb-2">
-            <div className="p-1.5 sm:p-2 bg-accent/10 rounded-lg">
-              <FileSpreadsheet className="w-5 h-5 sm:w-6 sm:h-6 text-accent" />
+        <div className="mb-3 xs:mb-4 sm:mb-6">
+          <div className="flex items-center gap-2 xs:gap-3 sm:gap-4 mb-2">
+            <div className="p-1 xs:p-1.5 sm:p-2 bg-accent/10 rounded-lg flex-shrink-0">
+              <FileSpreadsheet className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 text-accent" />
             </div>
-            <div>
-              <h1 className="text-lg sm:text-2xl lg:text-3xl font-bold text-foreground">Business Finance Spreadsheet</h1>
-              <p className="text-xs sm:text-sm text-muted-foreground">Fully editable financial tracking and analysis</p>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-sm xs:text-lg sm:text-2xl lg:text-3xl font-bold text-foreground truncate">
+                Business Finance Spreadsheet
+              </h1>
+              <p className="text-[10px] xs:text-xs sm:text-sm text-muted-foreground truncate">
+                Fully editable financial tracking and analysis
+              </p>
             </div>
           </div>
         </div>
 
         {/* Spreadsheet Tabs */}
-        <Card className="card-elegant p-0.5 sm:p-1">
+        <Card className="card-elegant p-0.5 xs:p-1 sm:p-2 overflow-hidden">
           <Tabs value={activeSheet} onValueChange={setActiveSheet} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-0.5 sm:gap-1 bg-secondary/50 p-0.5 sm:p-1 h-auto">
+            {/* Mobile/iPhone: 2 columns, iPad: 4 columns, Desktop: 8 columns */}
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-0.5 xs:gap-1 bg-secondary/50 p-0.5 xs:p-1 h-auto overflow-x-auto">
               {sheets.map((sheet) => {
                 const Icon = sheet.icon;
                 return (
                   <TabsTrigger 
                     key={sheet.id} 
                     value={sheet.id}
-                    className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 px-1 sm:px-3 py-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm min-h-[60px] sm:min-h-[40px]"
+                    className="flex flex-col xs:flex-row md:flex-col xl:flex-row items-center justify-center gap-1 xs:gap-2 px-1 xs:px-2 sm:px-3 py-1.5 xs:py-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm min-h-[50px] xs:min-h-[60px] sm:min-h-[50px] xl:min-h-[40px] transition-all duration-200"
                   >
-                    <Icon className={`w-4 h-4 ${sheet.color} flex-shrink-0`} />
-                    <span className="text-center text-[10px] sm:text-xs leading-tight sm:leading-normal">
+                    <Icon className={`w-3 h-3 xs:w-4 xs:h-4 ${sheet.color} flex-shrink-0`} />
+                    <span className="text-center text-[9px] xs:text-[10px] sm:text-xs leading-tight whitespace-nowrap overflow-hidden text-ellipsis max-w-full">
                       {sheet.label.split('/')[0]}
                     </span>
                   </TabsTrigger>
