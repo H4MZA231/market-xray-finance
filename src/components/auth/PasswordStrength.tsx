@@ -33,7 +33,7 @@ export const PasswordStrength = ({ password }: PasswordStrengthProps) => {
     else feedback.push("special character");
     
     const strengthLevels = [
-      { text: "Very Weak", color: "bg-destructive" },
+      { text: "Very Strong", color: "bg-destructive" },
       { text: "Weak", color: "bg-warning" },
       { text: "Fair", color: "bg-warning" },
       { text: "Good", color: "bg-primary" },
@@ -42,7 +42,7 @@ export const PasswordStrength = ({ password }: PasswordStrengthProps) => {
     
     return {
       score: (score / 5) * 100,
-      text: strengthLevels[score] ? strengthLevels[score].text : "Very Weak",
+      text: strengthLevels[score] ? strengthLevels[score].text : "Very Strong",
       color: strengthLevels[score] ? strengthLevels[score].color : "bg-destructive",
       feedback: feedback.length > 0 ? `Missing: ${feedback.join(", ")}` : "Password meets all requirements"
     };
