@@ -1,10 +1,14 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 import { 
   FileSpreadsheet,
   DollarSign,
+  Settings,
   Receipt,
   CreditCard,
   TrendingUp,
@@ -55,10 +59,62 @@ export const SpreadsheetView = () => {
                 </p>
               </div>
             </div>
-            <div className="hidden xs:block text-right">
-              <p className="text-xs xs:text-sm sm:text-base font-medium text-foreground">
-                Welcome, {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'}
-              </p>
+            <div className="flex items-center gap-2">
+              <div className="hidden xs:block text-right">
+                <p className="text-xs xs:text-sm sm:text-base font-medium text-foreground">
+                  Welcome, {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'}
+                </p>
+              </div>
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex-shrink-0">
+                    <Settings className="w-4 h-4" />
+                    <span className="hidden sm:inline ml-2">Settings</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent>
+                  <SheetHeader>
+                    <SheetTitle>Settings</SheetTitle>
+                    <SheetDescription>
+                      Manage your account settings and preferences.
+                    </SheetDescription>
+                  </SheetHeader>
+                  
+                  <div className="mt-6 space-y-6">
+                    <div>
+                      <h3 className="text-lg font-semibold mb-4">Account & Password</h3>
+                      
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Email</label>
+                          <div className="mt-1 p-3 bg-muted rounded-md">
+                            <p className="text-sm">{user?.email}</p>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Password</label>
+                          <div className="mt-1 p-3 bg-muted rounded-md">
+                            <p className="text-sm">••••••••</p>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Password is hidden for security reasons
+                          </p>
+                        </div>
+                        
+                        <Separator />
+                        
+                        <div>
+                          <label className="text-sm font-medium text-muted-foreground">Full Name</label>
+                          <div className="mt-1 p-3 bg-muted rounded-md">
+                            <p className="text-sm">{user?.user_metadata?.full_name || 'Not provided'}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
             </div>
           </div>
         </div>
