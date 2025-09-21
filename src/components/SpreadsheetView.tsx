@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   FileSpreadsheet,
   DollarSign,
@@ -22,6 +23,7 @@ import { DashboardSheet } from "./spreadsheet/DashboardSheet";
 
 export const SpreadsheetView = () => {
   const [activeSheet, setActiveSheet] = useState("dashboard");
+  const { user } = useAuth();
 
   const sheets = [
     { id: "dashboard", label: "Dashboard", icon: BarChart3, color: "text-accent" },
@@ -39,16 +41,23 @@ export const SpreadsheetView = () => {
       <div className="max-w-full xl:max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-3 xs:mb-4 sm:mb-6">
-          <div className="flex items-center gap-2 xs:gap-3 sm:gap-4 mb-2">
-            <div className="p-1 xs:p-1.5 sm:p-2 bg-accent/10 rounded-lg flex-shrink-0">
-              <FileSpreadsheet className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 text-accent" />
+          <div className="flex items-center justify-between gap-2 xs:gap-3 sm:gap-4 mb-2">
+            <div className="flex items-center gap-2 xs:gap-3 sm:gap-4 min-w-0 flex-1">
+              <div className="p-1 xs:p-1.5 sm:p-2 bg-accent/10 rounded-lg flex-shrink-0">
+                <FileSpreadsheet className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 text-accent" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-sm xs:text-lg sm:text-2xl lg:text-3xl font-bold text-foreground truncate">
+                  Business Finance Spreadsheet
+                </h1>
+                <p className="text-[10px] xs:text-xs sm:text-sm text-muted-foreground truncate">
+                  Fully editable financial tracking and analysis
+                </p>
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <h1 className="text-sm xs:text-lg sm:text-2xl lg:text-3xl font-bold text-foreground truncate">
-                Business Finance Spreadsheet
-              </h1>
-              <p className="text-[10px] xs:text-xs sm:text-sm text-muted-foreground truncate">
-                Fully editable financial tracking and analysis
+            <div className="hidden xs:block text-right">
+              <p className="text-xs xs:text-sm sm:text-base font-medium text-foreground">
+                Welcome, {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'}
               </p>
             </div>
           </div>
