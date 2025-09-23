@@ -119,17 +119,30 @@ const SignInForm = ({ onToggleMode }: { onToggleMode: () => void }) => {
           </form>
         </Form>
 
-        <div className="mt-6 text-center">
-          <p className="text-sm text-muted-foreground">
-            Don't have an account?{" "}
-            <Button
-              variant="link"
-              className="p-0 h-auto font-semibold text-primary"
-              onClick={onToggleMode}
-            >
-              Sign up
-            </Button>
-          </p>
+        <div className="mt-6">
+          <div className="flex justify-between items-center">
+            <div className="text-center flex-1">
+              <p className="text-sm text-muted-foreground">
+                Don't have an account?{" "}
+                <Button
+                  variant="link"
+                  className="p-0 h-auto font-semibold text-primary"
+                  onClick={onToggleMode}
+                >
+                  Sign up
+                </Button>
+              </p>
+            </div>
+            <div className="text-right">
+              <Button
+                variant="link"
+                className="p-0 h-auto text-sm text-muted-foreground hover:text-primary"
+                onClick={() => {/* TODO: Implement forgot password */}}
+              >
+                Forgot password?
+              </Button>
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>

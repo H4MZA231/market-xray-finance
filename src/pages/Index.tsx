@@ -22,12 +22,12 @@ const Index = () => {
   return (
     <div className="min-h-screen">
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <User className="h-5 w-5" />
-            <span className="font-medium">{user.email}</span>
+        <div className="container flex h-16 items-center justify-between px-6">
+          <div className="flex items-center space-x-3">
+            <User className="h-5 w-5 text-primary" />
+            <span className="font-medium text-lg">{user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'}</span>
           </div>
-          <Button variant="outline" size="sm" onClick={signOut}>
+          <Button variant="outline" size="sm" onClick={signOut} className="ml-8">
             <LogOut className="h-4 w-4 mr-2" />
             Sign Out
           </Button>
