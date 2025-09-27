@@ -39,129 +39,107 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-interface Transaction {
-  id: string;
-  date: string;
-  category: string;
-  amount: number;
-  notes: string;
-}
-
 export function SpreadsheetView() {
   const { user } = useAuth();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [records, setRecords] = useState<any[]>([]);
+  const [form, setForm] = useState({ date: "", category: "", amount: "", notes: "" });
 
-  // Form state
-  const [date, setDate] = useState("");
-  const [category, setCategory] = useState("");
-  const [amount, setAmount] = useState<number | "">("");
-  const [notes, setNotes] = useState("");
-
-  // Fetch per-user transactions
+  // ✅ Fetch only the logged-in user's data
   useEffect(() => {
     if (!user) return;
 
     const fetchData = async () => {
-      setLoading(true);
       const { data, error } = await supabase
-        .from<Transaction>("transactions")
+        .from("transactions")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", user.id) // ✅ filter by user_id
         .order("date", { ascending: false });
 
-      if (error) console.error("Error fetching transactions:", error);
-      else setTransactions(data || []);
-      setLoading(false);
+      if (error) {
+        console.error("Error fetching data:", error);
+      } else {
+        setRecords(data || []); // ✅ empty if no data yet
+      }
     };
 
     fetchData();
-
-    // Optional: subscribe to live changes
-    const subscription = supabase
-      .from(`transactions:user_id=eq.${user.id}`)
-      .on("*", () => fetchData())
-      .subscribe();
-
-    return () => {
-      supabase.removeSubscription(subscription);
-    };
   }, [user]);
 
-  // Add new transaction
-  const handleAdd = async () => {
-    if (!date || !category || amount === "") return;
+  // ✅ Add a new record
+  const addRecord = async () => {
+    if (!user) return;
 
-    const { error } = await supabase.from("transactions").insert([
-      {
-        user_id: user.id,
-        date,
-        category,
-        amount: Number(amount),
-        notes,
-      },
-    ]);
+    const { data, error } = await supabase
+      .from("transactions")
+      .insert([
+        {
+          user_id: user.id,
+          date: form.date,
+          category: form.category,
+          amount: parseFloat(form.amount),
+          notes: form.notes,
+        },
+      ])
+      .select();
 
-    if (error) console.error("Error adding transaction:", error);
-    else {
-      setDate("");
-      setCategory("");
-      setAmount("");
-      setNotes("");
+    if (error) {
+      console.error("Error adding record:", error);
+    } else {
+      setRecords((prev) => [...data, ...prev]);
+      setForm({ date: "", category: "", amount: "", notes: "" }); // reset form
     }
   };
 
-  // Calculate totals
-  const totalRevenue = transactions
-    .filter(t => t.amount > 0)
-    .reduce((sum, t) => sum + t.amount, 0);
-  const totalExpenses = transactions
-    .filter(t => t.amount < 0)
-    .reduce((sum, t) => sum + t.amount, 0);
-  const profit = totalRevenue + totalExpenses;
-
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4">Business Dashboard</h2>
+      <h2 className="text-xl font-bold mb-4">Business Dashboard</h2>
 
-      {/* Totals */}
-      <div className="flex space-x-4 mb-6">
-        <div>Revenue: <span className="text-green-600">{totalRevenue}</span></div>
-        <div>Expenses: <span className="text-red-600">{totalExpenses}</span></div>
-        <div>Profit: <span className={profit >= 0 ? "text-green-600" : "text-red-600"}>{profit}</span></div>
+      {/* ✅ Add Record Form */}
+      <div className="grid grid-cols-5 gap-2 mb-6">
+        <Input
+          type="date"
+          value={form.date}
+          onChange={(e) => setForm({ ...form, date: e.target.value })}
+        />
+        <Input
+          placeholder="Category"
+          value={form.category}
+          onChange={(e) => setForm({ ...form, category: e.target.value })}
+        />
+        <Input
+          type="number"
+          placeholder="Amount"
+          value={form.amount}
+          onChange={(e) => setForm({ ...form, amount: e.target.value })}
+        />
+        <Input
+          placeholder="Notes"
+          value={form.notes}
+          onChange={(e) => setForm({ ...form, notes: e.target.value })}
+        />
+        <Button onClick={addRecord}>Add</Button>
       </div>
 
-      {/* Add Transaction Form */}
-      <div className="mb-6 flex space-x-2">
-        <Input type="date" value={date} onChange={e => setDate(e.target.value)} placeholder="Date" />
-        <Input type="text" value={category} onChange={e => setCategory(e.target.value)} placeholder="Category" />
-        <Input type="number" value={amount} onChange={e => setAmount(Number(e.target.value))} placeholder="Amount" />
-        <Input type="text" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notes" />
-        <Button onClick={handleAdd}>Add</Button>
-      </div>
-
-      {/* Transactions Table */}
-      {loading ? (
-        <div>Loading...</div>
-      ) : transactions.length === 0 ? (
-        <div>No transactions yet.</div>
+      {/* ✅ Records Table */}
+      {records.length === 0 ? (
+        <p>No records yet. Start adding your business data!</p>
       ) : (
-        <table className="w-full border-collapse border">
+        <table className="w-full border">
           <thead>
             <tr>
-              <th className="border p-2">Date</th>
-              <th className="border p-2">Category</th>
-              <th className="border p-2">Amount</th>
-              <th className="border p-2">Notes</th>
+              <th className="border px-4 py-2">Date</th>
+              <th className="border px-4 py-2">Category</th>
+              <th className="border px-4 py-2">Amount</th>
+              <th className="border px-4 py-2">Notes</th>
             </tr>
           </thead>
           <tbody>
-            {transactions.map(t => (
-              <tr key={t.id}>
-                <td className="border p-2">{t.date}</td>
-                <td className="border p-2">{t.category}</td>
-                <td className={`border p-2 ${t.amount >= 0 ? "text-green-600" : "text-red-600"}`}>{t.amount}</td>
-                <td className="border p-2">{t.notes}</td>
+            {records.map((row) => (
+              <tr key={row.id}>
+                <td className="border px-4 py-2">{row.date}</td>
+                <td className="border px-4 py-2">{row.category}</td>
+                <td className="border px-4 py-2">{row.amount}</td>
+                <td className="border px-4 py-2">{row.notes}</td>
               </tr>
             ))}
           </tbody>
