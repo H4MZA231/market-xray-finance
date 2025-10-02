@@ -1,66 +1,106 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { EditableTable, TableColumn, TableRow } from "./EditableTable";
 import { Progress } from "@/components/ui/progress";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 export const KPIsSheet = () => {
-  const [kpiData, setKPIData] = useState<TableRow[]>([
-    {
-      id: "kpi_1",
-      metricName: "Monthly Recurring Revenue (MRR)",
-      value: 26700,
-      target: 30000,
-      status: "yellow"
-    },
-    {
-      id: "kpi_2",
-      metricName: "Customer Acquisition Cost (CAC)",
-      value: 250,
-      target: 200,
-      status: "yellow"
-    },
-    {
-      id: "kpi_3", 
-      metricName: "Customer Lifetime Value (CLV)",
-      value: 2400,
-      target: 2000,
-      status: "green"
-    },
-    {
-      id: "kpi_4",
-      metricName: "Gross Profit Margin %",
-      value: 83.3,
-      target: 80,
-      status: "green"
-    },
-    {
-      id: "kpi_5",
-      metricName: "Cash Runway (months)",
-      value: 14.3,
-      target: 12,
-      status: "green"
-    },
-    {
-      id: "kpi_6",
-      metricName: "Debt-to-Revenue Ratio",
-      value: 2.3,
-      target: 2.0,
-      status: "yellow"
-    },
-    {
-      id: "kpi_7",
-      metricName: "Monthly Active Customers",
-      value: 45,
-      target: 50,
-      status: "yellow"
-    },
-    {
-      id: "kpi_8",
-      metricName: "Employee Productivity Score",
-      value: 87,
-      target: 90,
-      status: "yellow"
+  const [kpiData, setKPIData] = useState<TableRow[]>([]);
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (user) {
+      fetchKPIData();
     }
-  ]);
+  }, [user]);
+
+  const fetchKPIData = async () => {
+    const { data, error } = await supabase
+      .from('kpi_entries')
+      .select('*')
+      .eq('user_id', user?.id)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      toast({
+        title: "Error loading KPI data",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      setKPIData(data.map(entry => ({
+        id: entry.id,
+        metricName: entry.metric_name,
+        value: entry.value,
+        target: entry.target,
+        status: calculateStatus(entry.value, entry.target, entry.metric_name),
+        category: entry.category
+      })));
+    }
+  };
+
+  const calculateStatus = (value: number, target: number, metricName: string): string => {
+    const percentage = target > 0 ? (value / target) * 100 : 0;
+    
+    if (metricName?.toLowerCase().includes('cost') || 
+        metricName?.toLowerCase().includes('ratio')) {
+      if (percentage <= 100) return 'green';
+      if (percentage <= 120) return 'yellow';
+      return 'red';
+    }
+    
+    if (percentage >= 100) return 'green';
+    if (percentage >= 80) return 'yellow';
+    return 'red';
+  };
+
+  const handleDataChange = async (newData: TableRow[]) => {
+    setKPIData(newData);
+    
+    for (const row of newData) {
+      if (row.id && row.id.toString().startsWith('kpi_') && row.id.toString().includes('new')) {
+        const { error } = await supabase
+          .from('kpi_entries')
+          .insert({
+            user_id: user?.id,
+            metric_name: row.metricName,
+            value: row.value,
+            target: row.target,
+            category: row.category || 'General'
+          });
+
+        if (error) {
+          toast({
+            title: "Error saving KPI entry",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+      } else {
+        const { error } = await supabase
+          .from('kpi_entries')
+          .update({
+            metric_name: row.metricName,
+            value: row.value,
+            target: row.target,
+            category: row.category || 'General'
+          })
+          .eq('id', row.id);
+
+        if (error) {
+          toast({
+            title: "Error updating KPI entry",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+      }
+    }
+    
+    fetchKPIData();
+  };
 
   const columns: TableColumn[] = [
     {
@@ -181,7 +221,7 @@ export const KPIsSheet = () => {
         title="Key Performance Indicators"
         columns={columns}
         data={kpiData}
-        onDataChange={setKPIData}
+        onDataChange={handleDataChange}
         addButtonText="Add KPI Metric"
       />
 

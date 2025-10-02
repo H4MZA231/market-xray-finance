@@ -1,37 +1,100 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { EditableTable, TableColumn, TableRow } from "./EditableTable";
 import { Progress } from "@/components/ui/progress";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 export const DebtSheet = () => {
-  const [debtData, setDebtData] = useState<TableRow[]>([
-    {
-      id: "debt_1",
-      lender: "First National Bank",
-      amountBorrowed: 50000,
-      interestRate: 6.5,
-      monthlyPayment: 850,
-      remainingBalance: 37500,
-      dueDate: "2026-12-31"
-    },
-    {
-      id: "debt_2",
-      lender: "TechCorp Financial",
-      amountBorrowed: 25000,
-      interestRate: 4.2,
-      monthlyPayment: 420,
-      remainingBalance: 15800,
-      dueDate: "2025-08-15"
-    },
-    {
-      id: "debt_3",
-      lender: "Business Credit Union",
-      amountBorrowed: 15000,
-      interestRate: 8.1,
-      monthlyPayment: 280,
-      remainingBalance: 9200,
-      dueDate: "2025-03-20"
+  const [debtData, setDebtData] = useState<TableRow[]>([]);
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (user) {
+      fetchDebtData();
     }
-  ]);
+  }, [user]);
+
+  const fetchDebtData = async () => {
+    const { data, error } = await supabase
+      .from('debt_entries')
+      .select('*')
+      .eq('user_id', user?.id)
+      .order('due_date', { ascending: true });
+
+    if (error) {
+      toast({
+        title: "Error loading debt data",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      setDebtData(data.map(entry => ({
+        id: entry.id,
+        lender: entry.creditor,
+        amountBorrowed: entry.original_amount,
+        interestRate: entry.interest_rate,
+        monthlyPayment: entry.monthly_payment,
+        remainingBalance: entry.current_balance,
+        dueDate: entry.due_date,
+        notes: entry.notes || ''
+      })));
+    }
+  };
+
+  const handleDataChange = async (newData: TableRow[]) => {
+    setDebtData(newData);
+    
+    for (const row of newData) {
+      if (row.id && row.id.toString().startsWith('debt_') && row.id.toString().includes('new')) {
+        const { error } = await supabase
+          .from('debt_entries')
+          .insert({
+            user_id: user?.id,
+            creditor: row.lender,
+            type: 'Loan',
+            original_amount: row.amountBorrowed,
+            current_balance: row.remainingBalance,
+            interest_rate: row.interestRate,
+            monthly_payment: row.monthlyPayment,
+            due_date: row.dueDate,
+            notes: row.notes || null
+          });
+
+        if (error) {
+          toast({
+            title: "Error saving debt entry",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+      } else {
+        const { error } = await supabase
+          .from('debt_entries')
+          .update({
+            creditor: row.lender,
+            original_amount: row.amountBorrowed,
+            current_balance: row.remainingBalance,
+            interest_rate: row.interestRate,
+            monthly_payment: row.monthlyPayment,
+            due_date: row.dueDate,
+            notes: row.notes || null
+          })
+          .eq('id', row.id);
+
+        if (error) {
+          toast({
+            title: "Error updating debt entry",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+      }
+    }
+    
+    fetchDebtData();
+  };
 
   const columns: TableColumn[] = [
     {
@@ -131,7 +194,7 @@ export const DebtSheet = () => {
         title="Debts & Loans"
         columns={columns}
         data={debtData}
-        onDataChange={setDebtData}
+        onDataChange={handleDataChange}
         addButtonText="Add Debt/Loan"
       />
 

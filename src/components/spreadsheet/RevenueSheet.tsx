@@ -1,33 +1,96 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { EditableTable, TableColumn, TableRow } from "./EditableTable";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 export const RevenueSheet = () => {
-  const [revenueData, setRevenueData] = useState<TableRow[]>([
-    {
-      id: "rev_1",
-      date: "2024-01-15",
-      client: "TechCorp Solutions",
-      category: "Consulting",
-      amount: 15000,
-      notes: "Q1 strategy consulting project"
-    },
-    {
-      id: "rev_2", 
-      date: "2024-01-20",
-      client: "StartupXYZ",
-      category: "Software Development",
-      amount: 8500,
-      notes: "Mobile app development phase 1"
-    },
-    {
-      id: "rev_3",
-      date: "2024-01-28",
-      client: "Enterprise Inc",
-      category: "Training",
-      amount: 3200,
-      notes: "Team training workshop"
+  const [revenueData, setRevenueData] = useState<TableRow[]>([]);
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (user) {
+      fetchRevenueData();
     }
-  ]);
+  }, [user]);
+
+  const fetchRevenueData = async () => {
+    const { data, error } = await supabase
+      .from('revenue_entries')
+      .select('*')
+      .eq('user_id', user?.id)
+      .order('date', { ascending: false });
+
+    if (error) {
+      toast({
+        title: "Error loading revenue data",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      setRevenueData(data.map(entry => ({
+        id: entry.id,
+        date: entry.date,
+        client: entry.client,
+        category: entry.category,
+        amount: entry.amount,
+        notes: entry.notes || ''
+      })));
+    }
+  };
+
+  const handleDataChange = async (newData: TableRow[]) => {
+    setRevenueData(newData);
+    
+    // Save to database
+    for (const row of newData) {
+      if (row.id && row.id.toString().startsWith('rev_') && row.id.toString().includes('new')) {
+        // New row - insert
+        const { error } = await supabase
+          .from('revenue_entries')
+          .insert({
+            user_id: user?.id,
+            date: row.date,
+            client: row.client,
+            category: row.category,
+            amount: row.amount,
+            notes: row.notes || null
+          });
+
+        if (error) {
+          toast({
+            title: "Error saving revenue entry",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+      } else {
+        // Existing row - update
+        const { error } = await supabase
+          .from('revenue_entries')
+          .update({
+            date: row.date,
+            client: row.client,
+            category: row.category,
+            amount: row.amount,
+            notes: row.notes || null
+          })
+          .eq('id', row.id);
+
+        if (error) {
+          toast({
+            title: "Error updating revenue entry",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+      }
+    }
+    
+    // Refresh data
+    fetchRevenueData();
+  };
 
   const columns: TableColumn[] = [
     {
@@ -102,7 +165,7 @@ export const RevenueSheet = () => {
         title="Revenue Tracking"
         columns={columns}
         data={revenueData}
-        onDataChange={setRevenueData}
+        onDataChange={handleDataChange}
         addButtonText="Add Revenue Entry"
       />
 

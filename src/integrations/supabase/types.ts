@@ -14,6 +14,180 @@ export type Database = {
   }
   public: {
     Tables: {
+      businesses: {
+        Row: {
+          created_at: string
+          id: number
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+        }
+        Update: {
+          created_at?: string
+          id?: number
+        }
+        Relationships: []
+      }
+      cash_flow_entries: {
+        Row: {
+          created_at: string | null
+          id: string
+          inflows: number
+          month: string
+          outflows: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          inflows?: number
+          month: string
+          outflows?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          inflows?: number
+          month?: string
+          outflows?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      debt_entries: {
+        Row: {
+          created_at: string | null
+          creditor: string
+          current_balance: number
+          due_date: string
+          id: string
+          interest_rate: number
+          monthly_payment: number
+          notes: string | null
+          original_amount: number
+          type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          creditor: string
+          current_balance: number
+          due_date: string
+          id?: string
+          interest_rate: number
+          monthly_payment: number
+          notes?: string | null
+          original_amount: number
+          type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          creditor?: string
+          current_balance?: number
+          due_date?: string
+          id?: string
+          interest_rate?: number
+          monthly_payment?: number
+          notes?: string | null
+          original_amount?: number
+          type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      expense_entries: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string | null
+          date: string
+          id: string
+          notes: string | null
+          updated_at: string | null
+          user_id: string
+          vendor: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string | null
+          date: string
+          id?: string
+          notes?: string | null
+          updated_at?: string | null
+          user_id: string
+          vendor: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string | null
+          date?: string
+          id?: string
+          notes?: string | null
+          updated_at?: string | null
+          user_id?: string
+          vendor?: string
+        }
+        Relationships: []
+      }
+      kpi_entries: {
+        Row: {
+          category: string
+          created_at: string | null
+          id: string
+          metric_name: string
+          target: number
+          updated_at: string | null
+          user_id: string
+          value: number
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          id?: string
+          metric_name: string
+          target: number
+          updated_at?: string | null
+          user_id: string
+          value: number
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          id?: string
+          metric_name?: string
+          target?: number
+          updated_at?: string | null
+          user_id?: string
+          value?: number
+        }
+        Relationships: []
+      }
+      People: {
+        Row: {
+          created_at: string
+          id: number
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+        }
+        Update: {
+          created_at?: string
+          id?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -44,6 +218,158 @@ export type Database = {
           role?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      profiles_backup: {
+        Row: {
+          avatar_url: string | null
+          company_name: string | null
+          created_at: string | null
+          full_name: string | null
+          id: string | null
+          role: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string | null
+          role?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          full_name?: string | null
+          id?: string | null
+          role?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      profit_loss_entries: {
+        Row: {
+          created_at: string | null
+          expenses_total: number
+          id: string
+          month: string
+          revenue_total: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expenses_total?: number
+          id?: string
+          month: string
+          revenue_total?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expenses_total?: number
+          id?: string
+          month?: string
+          revenue_total?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      records: {
+        Row: {
+          business_id: number
+          created_at: string
+          data: Json
+          id: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          business_id: number
+          created_at?: string
+          data: Json
+          id?: number
+          updated_at: string
+          user_id?: string
+        }
+        Update: {
+          business_id?: number
+          created_at?: string
+          data?: Json
+          id?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "records_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      revenue_entries: {
+        Row: {
+          amount: number
+          category: string
+          client: string
+          created_at: string | null
+          date: string
+          id: string
+          notes: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          client: string
+          created_at?: string | null
+          date: string
+          id?: string
+          notes?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          client?: string
+          created_at?: string | null
+          date?: string
+          id?: string
+          notes?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_id: {
+        Row: {
+          created_at: string
+          id: number
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          user_id?: string | null
         }
         Relationships: []
       }

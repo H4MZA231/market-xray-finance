@@ -1,41 +1,92 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { EditableTable, TableColumn, TableRow } from "./EditableTable";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 export const ExpensesSheet = () => {
-  const [expensesData, setExpensesData] = useState<TableRow[]>([
-    {
-      id: "exp_1",
-      date: "2024-01-10",
-      vendor: "Office Supplies Co",
-      category: "Office Supplies",
-      amount: 450,
-      notes: "Monthly office supply restock"
-    },
-    {
-      id: "exp_2",
-      date: "2024-01-15", 
-      vendor: "CloudTech Services",
-      category: "Software Subscriptions",
-      amount: 299,
-      notes: "Monthly SaaS subscriptions"
-    },
-    {
-      id: "exp_3",
-      date: "2024-01-20",
-      vendor: "Marketing Agency Pro",
-      category: "Marketing",
-      amount: 2500,
-      notes: "Q1 marketing campaign"
-    },
-    {
-      id: "exp_4",
-      date: "2024-01-25",
-      vendor: "Business Insurance Corp",
-      category: "Insurance",
-      amount: 1200,
-      notes: "Quarterly business insurance"
+  const [expensesData, setExpensesData] = useState<TableRow[]>([]);
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (user) {
+      fetchExpensesData();
     }
-  ]);
+  }, [user]);
+
+  const fetchExpensesData = async () => {
+    const { data, error } = await supabase
+      .from('expense_entries')
+      .select('*')
+      .eq('user_id', user?.id)
+      .order('date', { ascending: false });
+
+    if (error) {
+      toast({
+        title: "Error loading expense data",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      setExpensesData(data.map(entry => ({
+        id: entry.id,
+        date: entry.date,
+        vendor: entry.vendor,
+        category: entry.category,
+        amount: entry.amount,
+        notes: entry.notes || ''
+      })));
+    }
+  };
+
+  const handleDataChange = async (newData: TableRow[]) => {
+    setExpensesData(newData);
+    
+    for (const row of newData) {
+      if (row.id && row.id.toString().startsWith('exp_') && row.id.toString().includes('new')) {
+        const { error } = await supabase
+          .from('expense_entries')
+          .insert({
+            user_id: user?.id,
+            date: row.date,
+            vendor: row.vendor,
+            category: row.category,
+            amount: row.amount,
+            notes: row.notes || null
+          });
+
+        if (error) {
+          toast({
+            title: "Error saving expense entry",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+      } else {
+        const { error } = await supabase
+          .from('expense_entries')
+          .update({
+            date: row.date,
+            vendor: row.vendor,
+            category: row.category,
+            amount: row.amount,
+            notes: row.notes || null
+          })
+          .eq('id', row.id);
+
+        if (error) {
+          toast({
+            title: "Error updating expense entry",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+      }
+    }
+    
+    fetchExpensesData();
+  };
 
   const columns: TableColumn[] = [
     {
@@ -114,7 +165,7 @@ export const ExpensesSheet = () => {
         title="Expense Tracking"
         columns={columns}
         data={expensesData}
-        onDataChange={setExpensesData}
+        onDataChange={handleDataChange}
         addButtonText="Add Expense Entry"
       />
 

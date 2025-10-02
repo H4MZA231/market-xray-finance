@@ -1,46 +1,89 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { EditableTable, TableColumn, TableRow } from "./EditableTable";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 export const CashFlowSheet = () => {
-  const [cashFlowData, setCashFlowData] = useState<TableRow[]>([
-    {
-      id: "cf_1",
-      month: "2024-02",
-      projectedRevenue: 28000,
-      projectedExpenses: 4800,
-      cashBalance: 0 // Will be calculated
-    },
-    {
-      id: "cf_2", 
-      month: "2024-03",
-      projectedRevenue: 30000,
-      projectedExpenses: 5100,
-      cashBalance: 0 // Will be calculated
-    },
-    {
-      id: "cf_3",
-      month: "2024-04",
-      projectedRevenue: 32000,
-      projectedExpenses: 5300,
-      cashBalance: 0 // Will be calculated
-    },
-    {
-      id: "cf_4",
-      month: "2024-05",
-      projectedRevenue: 34000,
-      projectedExpenses: 5500,
-      cashBalance: 0 // Will be calculated
-    },
-    {
-      id: "cf_5",
-      month: "2024-06",
-      projectedRevenue: 36000,
-      projectedExpenses: 5800,
-      cashBalance: 0 // Will be calculated
-    }
-  ]);
+  const [cashFlowData, setCashFlowData] = useState<TableRow[]>([]);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-  const startingCashBalance = 22251; // Current cash from P&L
+  useEffect(() => {
+    if (user) {
+      fetchCashFlowData();
+    }
+  }, [user]);
+
+  const fetchCashFlowData = async () => {
+    const { data, error } = await supabase
+      .from('cash_flow_entries')
+      .select('*')
+      .eq('user_id', user?.id)
+      .order('month', { ascending: true });
+
+    if (error) {
+      toast({
+        title: "Error loading cash flow data",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      setCashFlowData(data.map(entry => ({
+        id: entry.id,
+        month: entry.month,
+        projectedRevenue: entry.inflows,
+        projectedExpenses: entry.outflows,
+        cashBalance: 0
+      })));
+    }
+  };
+
+  const handleDataChange = async (newData: TableRow[]) => {
+    setCashFlowData(newData);
+    
+    for (const row of newData) {
+      if (row.id && row.id.toString().startsWith('cf_') && row.id.toString().includes('new')) {
+        const { error } = await supabase
+          .from('cash_flow_entries')
+          .insert({
+            user_id: user?.id,
+            month: row.month,
+            inflows: row.projectedRevenue,
+            outflows: row.projectedExpenses
+          });
+
+        if (error) {
+          toast({
+            title: "Error saving cash flow entry",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+      } else {
+        const { error } = await supabase
+          .from('cash_flow_entries')
+          .update({
+            month: row.month,
+            inflows: row.projectedRevenue,
+            outflows: row.projectedExpenses
+          })
+          .eq('id', row.id);
+
+        if (error) {
+          toast({
+            title: "Error updating cash flow entry",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+      }
+    }
+    
+    fetchCashFlowData();
+  };
+
+  const startingCashBalance = 0;
 
   const columns: TableColumn[] = [
     {
@@ -199,7 +242,7 @@ export const CashFlowSheet = () => {
         title="Cash Flow Forecast"
         columns={columns}
         data={cashFlowData}
-        onDataChange={setCashFlowData}
+        onDataChange={handleDataChange}
         addButtonText="Add Monthly Forecast"
       />
 

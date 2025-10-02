@@ -1,33 +1,88 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { EditableTable, TableColumn, TableRow } from "./EditableTable";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 export const ProfitLossSheet = () => {
-  const [plData, setPLData] = useState<TableRow[]>([
-    {
-      id: "pl_1",
-      month: "2024-01",
-      revenueTotal: 26700,
-      expensesTotal: 4449,
-      netProfit: 0, // Will be calculated
-      profitMargin: 0 // Will be calculated
-    },
-    {
-      id: "pl_2", 
-      month: "2023-12",
-      revenueTotal: 24500,
-      expensesTotal: 4200,
-      netProfit: 0, // Will be calculated
-      profitMargin: 0 // Will be calculated
-    },
-    {
-      id: "pl_3",
-      month: "2023-11", 
-      revenueTotal: 22800,
-      expensesTotal: 3950,
-      netProfit: 0, // Will be calculated
-      profitMargin: 0 // Will be calculated
+  const [plData, setPLData] = useState<TableRow[]>([]);
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (user) {
+      fetchPLData();
     }
-  ]);
+  }, [user]);
+
+  const fetchPLData = async () => {
+    const { data, error } = await supabase
+      .from('profit_loss_entries')
+      .select('*')
+      .eq('user_id', user?.id)
+      .order('month', { ascending: false });
+
+    if (error) {
+      toast({
+        title: "Error loading P&L data",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      setPLData(data.map(entry => ({
+        id: entry.id,
+        month: entry.month,
+        revenueTotal: entry.revenue_total,
+        expensesTotal: entry.expenses_total,
+        netProfit: 0,
+        profitMargin: 0
+      })));
+    }
+  };
+
+  const handleDataChange = async (newData: TableRow[]) => {
+    setPLData(newData);
+    
+    for (const row of newData) {
+      if (row.id && row.id.toString().startsWith('pl_') && row.id.toString().includes('new')) {
+        const { error } = await supabase
+          .from('profit_loss_entries')
+          .insert({
+            user_id: user?.id,
+            month: row.month,
+            revenue_total: row.revenueTotal,
+            expenses_total: row.expensesTotal
+          });
+
+        if (error) {
+          toast({
+            title: "Error saving P&L entry",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+      } else {
+        const { error } = await supabase
+          .from('profit_loss_entries')
+          .update({
+            month: row.month,
+            revenue_total: row.revenueTotal,
+            expenses_total: row.expensesTotal
+          })
+          .eq('id', row.id);
+
+        if (error) {
+          toast({
+            title: "Error updating P&L entry",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
+      }
+    }
+    
+    fetchPLData();
+  };
 
   const columns: TableColumn[] = [
     {
@@ -164,7 +219,7 @@ export const ProfitLossSheet = () => {
         title="Profit & Loss Statement"
         columns={columns}
         data={plData}
-        onDataChange={setPLData}
+        onDataChange={handleDataChange}
         addButtonText="Add Monthly P&L"
       />
 
