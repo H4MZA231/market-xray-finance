@@ -42,25 +42,37 @@ export const CashFlowSheet = () => {
   const handleDataChange = async (newData: TableRow[]) => {
     setCashFlowData(newData);
     
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to save data",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     for (const row of newData) {
-      if (row.id && row.id.toString().startsWith('cf_') && row.id.toString().includes('new')) {
+      const isNewRow = row.id && typeof row.id === 'string' && row.id.startsWith('temp_');
+      
+      if (isNewRow) {
         const { error } = await supabase
           .from('cash_flow_entries')
           .insert({
-            user_id: user?.id,
+            user_id: user.id,
             month: row.month,
             inflows: row.projectedRevenue,
             outflows: row.projectedExpenses
           });
 
         if (error) {
+          console.error('Insert error:', error);
           toast({
             title: "Error saving cash flow entry",
             description: error.message,
             variant: "destructive",
           });
         }
-      } else {
+      } else if (row.id) {
         const { error } = await supabase
           .from('cash_flow_entries')
           .update({
@@ -68,9 +80,11 @@ export const CashFlowSheet = () => {
             inflows: row.projectedRevenue,
             outflows: row.projectedExpenses
           })
-          .eq('id', row.id);
+          .eq('id', row.id)
+          .eq('user_id', user.id);
 
         if (error) {
+          console.error('Update error:', error);
           toast({
             title: "Error updating cash flow entry",
             description: error.message,
@@ -80,7 +94,7 @@ export const CashFlowSheet = () => {
       }
     }
     
-    fetchCashFlowData();
+    await fetchCashFlowData();
   };
 
   const startingCashBalance = 0;

@@ -13,38 +13,38 @@ import {
 } from "lucide-react";
 
 export const DashboardSheet = () => {
-  // Sample data - would be calculated from other sheets in real implementation
+  // Empty data - will be calculated from other sheets in real implementation
   const dashboardData = {
     revenue: {
-      total: 26700,
-      growth: 12.5,
-      target: 30000
+      total: 0,
+      growth: 0,
+      target: 0
     },
     expenses: {
-      total: 4449,
-      growth: 8.2,
-      budget: 5000
+      total: 0,
+      growth: 0,
+      budget: 0
     },
     netProfit: {
-      amount: 22251,
-      margin: 83.3,
-      growth: 18.7
+      amount: 0,
+      margin: 0,
+      growth: 0
     },
     debt: {
-      total: 62500,
-      monthlyPayments: 1550,
-      avgInterestRate: 6.3
+      total: 0,
+      monthlyPayments: 0,
+      avgInterestRate: 0
     },
     cashFlow: {
-      current: 22251,
-      projected: 28500,
-      runway: 14.3
+      current: 0,
+      projected: 0,
+      runway: 0
     },
     kpis: {
-      onTarget: 5,
-      atRisk: 3,
+      onTarget: 0,
+      atRisk: 0,
       critical: 0,
-      score: 85
+      score: 0
     }
   };
 

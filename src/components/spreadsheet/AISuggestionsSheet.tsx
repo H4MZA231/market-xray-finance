@@ -4,72 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Brain, Lightbulb, TrendingUp, AlertTriangle, Target } from "lucide-react";
 
 export const AISuggestionsSheet = () => {
-  const [suggestionsData, setSuggestionsData] = useState<TableRow[]>([
-    {
-      id: "ai_1",
-      date: "2024-01-28",
-      category: "Cash Flow",
-      suggestion: "Your cash runway is strong at 14.3 months, but consider investing surplus cash in growth opportunities or higher-yield accounts to maximize returns.",
-      status: "pending",
-      priority: "medium"
-    },
-    {
-      id: "ai_2",
-      date: "2024-01-27",
-      category: "Debt Management", 
-      suggestion: "Refinance your highest interest debt (8.1% Business Credit Union loan) to save approximately $180/month in interest payments.",
-      status: "pending",
-      priority: "high"
-    },
-    {
-      id: "ai_3",
-      date: "2024-01-26",
-      category: "Revenue Optimization",
-      suggestion: "Your consulting category shows the highest profit margins. Consider expanding this service line or raising rates by 10-15%.",
-      status: "in-progress",
-      priority: "high"
-    },
-    {
-      id: "ai_4",
-      date: "2024-01-25", 
-      category: "Expense Control",
-      suggestion: "Marketing expenses are approaching budget limits. Analyze ROI on current campaigns and reallocate spend to highest-performing channels.",
-      status: "completed",
-      priority: "medium"
-    },
-    {
-      id: "ai_5",
-      date: "2024-01-24",
-      category: "KPI Improvement",
-      suggestion: "Customer Acquisition Cost is 25% above target. Implement referral program or improve conversion rates to reduce CAC to under $200.",
-      status: "pending", 
-      priority: "high"
-    },
-    {
-      id: "ai_6",
-      date: "2024-01-23",
-      category: "Risk Management",
-      suggestion: "Diversify client base - TechCorp Solutions represents 56% of revenue. Acquire 2-3 additional clients to reduce dependency risk.",
-      status: "in-progress",
-      priority: "high"
-    },
-    {
-      id: "ai_7",
-      date: "2024-01-22",
-      category: "Tax Planning",
-      suggestion: "Q1 profit projections indicate potential tax optimization opportunities. Consider equipment purchases or retirement contributions.",
-      status: "pending",
-      priority: "low"
-    },
-    {
-      id: "ai_8",
-      date: "2024-01-20",
-      category: "Profitability",
-      suggestion: "Gross profit margin of 83.3% exceeds target. You have room to invest in growth while maintaining healthy margins.",
-      status: "pending",
-      priority: "medium"
-    }
-  ]);
+  const [suggestionsData, setSuggestionsData] = useState<TableRow[]>([]);
 
   const columns: TableColumn[] = [
     {

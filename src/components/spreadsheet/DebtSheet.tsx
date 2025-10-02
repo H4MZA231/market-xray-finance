@@ -46,12 +46,23 @@ export const DebtSheet = () => {
   const handleDataChange = async (newData: TableRow[]) => {
     setDebtData(newData);
     
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to save data",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     for (const row of newData) {
-      if (row.id && row.id.toString().startsWith('debt_') && row.id.toString().includes('new')) {
+      const isNewRow = row.id && typeof row.id === 'string' && row.id.startsWith('temp_');
+      
+      if (isNewRow) {
         const { error } = await supabase
           .from('debt_entries')
           .insert({
-            user_id: user?.id,
+            user_id: user.id,
             creditor: row.lender,
             type: 'Loan',
             original_amount: row.amountBorrowed,
@@ -63,13 +74,14 @@ export const DebtSheet = () => {
           });
 
         if (error) {
+          console.error('Insert error:', error);
           toast({
             title: "Error saving debt entry",
             description: error.message,
             variant: "destructive",
           });
         }
-      } else {
+      } else if (row.id) {
         const { error } = await supabase
           .from('debt_entries')
           .update({
@@ -81,9 +93,11 @@ export const DebtSheet = () => {
             due_date: row.dueDate,
             notes: row.notes || null
           })
-          .eq('id', row.id);
+          .eq('id', row.id)
+          .eq('user_id', user.id);
 
         if (error) {
+          console.error('Update error:', error);
           toast({
             title: "Error updating debt entry",
             description: error.message,
@@ -93,7 +107,7 @@ export const DebtSheet = () => {
       }
     }
     
-    fetchDebtData();
+    await fetchDebtData();
   };
 
   const columns: TableColumn[] = [

@@ -43,14 +43,26 @@ export const RevenueSheet = () => {
   const handleDataChange = async (newData: TableRow[]) => {
     setRevenueData(newData);
     
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to save data",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     // Save to database
     for (const row of newData) {
-      if (row.id && row.id.toString().startsWith('rev_') && row.id.toString().includes('new')) {
+      // Check if this is a new row (temporary ID starting with temp_ or similar)
+      const isNewRow = row.id && typeof row.id === 'string' && (row.id.startsWith('temp_') || row.id.startsWith('new_'));
+      
+      if (isNewRow) {
         // New row - insert
         const { error } = await supabase
           .from('revenue_entries')
           .insert({
-            user_id: user?.id,
+            user_id: user.id,
             date: row.date,
             client: row.client,
             category: row.category,
@@ -59,13 +71,14 @@ export const RevenueSheet = () => {
           });
 
         if (error) {
+          console.error('Insert error:', error);
           toast({
             title: "Error saving revenue entry",
             description: error.message,
             variant: "destructive",
           });
         }
-      } else {
+      } else if (row.id) {
         // Existing row - update
         const { error } = await supabase
           .from('revenue_entries')
@@ -76,9 +89,11 @@ export const RevenueSheet = () => {
             amount: row.amount,
             notes: row.notes || null
           })
-          .eq('id', row.id);
+          .eq('id', row.id)
+          .eq('user_id', user.id);
 
         if (error) {
+          console.error('Update error:', error);
           toast({
             title: "Error updating revenue entry",
             description: error.message,
@@ -89,7 +104,7 @@ export const RevenueSheet = () => {
     }
     
     // Refresh data
-    fetchRevenueData();
+    await fetchRevenueData();
   };
 
   const columns: TableColumn[] = [

@@ -43,25 +43,37 @@ export const ProfitLossSheet = () => {
   const handleDataChange = async (newData: TableRow[]) => {
     setPLData(newData);
     
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to save data",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     for (const row of newData) {
-      if (row.id && row.id.toString().startsWith('pl_') && row.id.toString().includes('new')) {
+      const isNewRow = row.id && typeof row.id === 'string' && row.id.startsWith('temp_');
+      
+      if (isNewRow) {
         const { error } = await supabase
           .from('profit_loss_entries')
           .insert({
-            user_id: user?.id,
+            user_id: user.id,
             month: row.month,
             revenue_total: row.revenueTotal,
             expenses_total: row.expensesTotal
           });
 
         if (error) {
+          console.error('Insert error:', error);
           toast({
             title: "Error saving P&L entry",
             description: error.message,
             variant: "destructive",
           });
         }
-      } else {
+      } else if (row.id) {
         const { error } = await supabase
           .from('profit_loss_entries')
           .update({
@@ -69,9 +81,11 @@ export const ProfitLossSheet = () => {
             revenue_total: row.revenueTotal,
             expenses_total: row.expensesTotal
           })
-          .eq('id', row.id);
+          .eq('id', row.id)
+          .eq('user_id', user.id);
 
         if (error) {
+          console.error('Update error:', error);
           toast({
             title: "Error updating P&L entry",
             description: error.message,
@@ -81,7 +95,7 @@ export const ProfitLossSheet = () => {
       }
     }
     
-    fetchPLData();
+    await fetchPLData();
   };
 
   const columns: TableColumn[] = [

@@ -59,12 +59,23 @@ export const KPIsSheet = () => {
   const handleDataChange = async (newData: TableRow[]) => {
     setKPIData(newData);
     
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to save data",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     for (const row of newData) {
-      if (row.id && row.id.toString().startsWith('kpi_') && row.id.toString().includes('new')) {
+      const isNewRow = row.id && typeof row.id === 'string' && row.id.startsWith('temp_');
+      
+      if (isNewRow) {
         const { error } = await supabase
           .from('kpi_entries')
           .insert({
-            user_id: user?.id,
+            user_id: user.id,
             metric_name: row.metricName,
             value: row.value,
             target: row.target,
@@ -72,13 +83,14 @@ export const KPIsSheet = () => {
           });
 
         if (error) {
+          console.error('Insert error:', error);
           toast({
             title: "Error saving KPI entry",
             description: error.message,
             variant: "destructive",
           });
         }
-      } else {
+      } else if (row.id) {
         const { error } = await supabase
           .from('kpi_entries')
           .update({
@@ -87,9 +99,11 @@ export const KPIsSheet = () => {
             target: row.target,
             category: row.category || 'General'
           })
-          .eq('id', row.id);
+          .eq('id', row.id)
+          .eq('user_id', user.id);
 
         if (error) {
+          console.error('Update error:', error);
           toast({
             title: "Error updating KPI entry",
             description: error.message,
@@ -99,7 +113,7 @@ export const KPIsSheet = () => {
       }
     }
     
-    fetchKPIData();
+    await fetchKPIData();
   };
 
   const columns: TableColumn[] = [

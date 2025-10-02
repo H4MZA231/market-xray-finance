@@ -17,16 +17,16 @@ import { DebtManagement } from "./DebtManagement";
 import { AIInsights } from "./AIInsights";
 
 const Dashboard = () => {
-  // Sample financial data - would come from Supabase in real app
+  // Default empty financial data - will be calculated from database
   const financialData = {
-    totalRevenue: 125000,
-    totalExpenses: 87500,
-    netProfit: 37500,
-    totalDebt: 45000,
-    cashFlow: 12500,
-    burnRate: 8750,
-    runway: 14.3, // months
-    profitMargin: 30
+    totalRevenue: 0,
+    totalExpenses: 0,
+    netProfit: 0,
+    totalDebt: 0,
+    cashFlow: 0,
+    burnRate: 0,
+    runway: 0,
+    profitMargin: 0
   };
 
   const healthScore = Math.max(0, Math.min(100, 

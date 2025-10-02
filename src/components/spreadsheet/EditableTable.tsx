@@ -43,7 +43,7 @@ export const EditableTable = ({
 
   const handleAdd = () => {
     const newRow: TableRow = {
-      id: `row_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       ...columns.reduce((acc, col) => ({
         ...acc,
         [col.key]: col.type === 'number' || col.type === 'currency' || col.type === 'percentage' ? 0 : ''
