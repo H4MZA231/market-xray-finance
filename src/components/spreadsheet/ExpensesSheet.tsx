@@ -41,8 +41,9 @@ export const ExpensesSheet = () => {
   };
 
   const handleDataChange = async (newData: TableRow[]) => {
+    const prevData = expensesData;
     setExpensesData(newData);
-    
+
     if (!user) {
       toast({
         title: "Authentication required",
@@ -51,11 +52,25 @@ export const ExpensesSheet = () => {
       });
       return;
     }
-    
-    for (const row of newData) {
-      const isNewRow = row.id && typeof row.id === 'string' && row.id.startsWith('temp_');
-      
-      if (isNewRow) {
+
+    // Determine changes
+    const addedRows = newData.filter(r => !prevData.some(p => p.id === r.id));
+    const removedRows = prevData.filter(p => !newData.some(r => r.id === p.id));
+    const updatedRows = newData.filter(r => {
+      const prev = prevData.find(p => p.id === r.id);
+      return prev && JSON.stringify(prev) !== JSON.stringify(r);
+    });
+
+    let mutated = false;
+
+    // Handle inserts on save (when row existed before and now has values)
+    for (const row of updatedRows) {
+      const isTemp = typeof row.id === 'string' && row.id.startsWith('temp_');
+      if (isTemp) {
+        // Validate required fields
+        if (!row.date || !row.vendor || !row.category || row.amount === '' || row.amount === null || row.amount === undefined) {
+          continue; // skip invalid
+        }
         const { error } = await supabase
           .from('expense_entries')
           .insert({
@@ -63,43 +78,51 @@ export const ExpensesSheet = () => {
             date: row.date,
             vendor: row.vendor,
             category: row.category,
-            amount: row.amount,
-            notes: row.notes || null
+            amount: Number(row.amount),
+            notes: row.notes || null,
           });
-
         if (error) {
           console.error('Insert error:', error);
-          toast({
-            title: "Error saving expense entry",
-            description: error.message,
-            variant: "destructive",
-          });
+          toast({ title: "Error saving expense entry", description: error.message, variant: "destructive" });
+        } else {
+          mutated = true;
         }
-      } else if (row.id) {
+      } else {
         const { error } = await supabase
           .from('expense_entries')
           .update({
             date: row.date,
             vendor: row.vendor,
             category: row.category,
-            amount: row.amount,
-            notes: row.notes || null
+            amount: Number(row.amount),
+            notes: row.notes || null,
           })
           .eq('id', row.id)
           .eq('user_id', user.id);
-
         if (error) {
           console.error('Update error:', error);
-          toast({
-            title: "Error updating expense entry",
-            description: error.message,
-            variant: "destructive",
-          });
+          toast({ title: "Error updating expense entry", description: error.message, variant: "destructive" });
+        } else {
+          mutated = true;
         }
       }
     }
-    
-    await fetchExpensesData();
+
+    // Handle deletes for persisted rows
+    for (const row of removedRows) {
+      if (typeof row.id === 'string' && row.id.startsWith('temp_')) continue;
+      const { error } = await supabase.from('expense_entries').delete().eq('id', row.id).eq('user_id', user.id);
+      if (error) {
+        console.error('Delete error:', error);
+        toast({ title: "Error deleting expense entry", description: error.message, variant: "destructive" });
+      } else {
+        mutated = true;
+      }
+    }
+
+    if (mutated) {
+      await fetchExpensesData();
+    }
   };
 
   const columns: TableColumn[] = [

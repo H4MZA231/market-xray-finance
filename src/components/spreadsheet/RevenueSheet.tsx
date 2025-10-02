@@ -41,8 +41,9 @@ export const RevenueSheet = () => {
   };
 
   const handleDataChange = async (newData: TableRow[]) => {
+    const prevData = revenueData;
     setRevenueData(newData);
-    
+
     if (!user) {
       toast({
         title: "Authentication required",
@@ -51,14 +52,22 @@ export const RevenueSheet = () => {
       });
       return;
     }
-    
-    // Save to database
-    for (const row of newData) {
-      // Check if this is a new row (temporary ID starting with temp_ or similar)
-      const isNewRow = row.id && typeof row.id === 'string' && (row.id.startsWith('temp_') || row.id.startsWith('new_'));
-      
-      if (isNewRow) {
-        // New row - insert
+
+    const addedRows = newData.filter(r => !prevData.some(p => p.id === r.id));
+    const removedRows = prevData.filter(p => !newData.some(r => r.id === p.id));
+    const updatedRows = newData.filter(r => {
+      const prev = prevData.find(p => p.id === r.id);
+      return prev && JSON.stringify(prev) !== JSON.stringify(r);
+    });
+
+    let mutated = false;
+
+    for (const row of updatedRows) {
+      const isTemp = typeof row.id === 'string' && row.id.startsWith('temp_');
+      if (isTemp) {
+        if (!row.date || !row.client || !row.category || row.amount === '' || row.amount === null || row.amount === undefined) {
+          continue;
+        }
         const { error } = await supabase
           .from('revenue_entries')
           .insert({
@@ -66,45 +75,50 @@ export const RevenueSheet = () => {
             date: row.date,
             client: row.client,
             category: row.category,
-            amount: row.amount,
-            notes: row.notes || null
+            amount: Number(row.amount),
+            notes: row.notes || null,
           });
-
         if (error) {
           console.error('Insert error:', error);
-          toast({
-            title: "Error saving revenue entry",
-            description: error.message,
-            variant: "destructive",
-          });
+          toast({ title: "Error saving revenue entry", description: error.message, variant: "destructive" });
+        } else {
+          mutated = true;
         }
-      } else if (row.id) {
-        // Existing row - update
+      } else {
         const { error } = await supabase
           .from('revenue_entries')
           .update({
             date: row.date,
             client: row.client,
             category: row.category,
-            amount: row.amount,
-            notes: row.notes || null
+            amount: Number(row.amount),
+            notes: row.notes || null,
           })
           .eq('id', row.id)
           .eq('user_id', user.id);
-
         if (error) {
           console.error('Update error:', error);
-          toast({
-            title: "Error updating revenue entry",
-            description: error.message,
-            variant: "destructive",
-          });
+          toast({ title: "Error updating revenue entry", description: error.message, variant: "destructive" });
+        } else {
+          mutated = true;
         }
       }
     }
-    
-    // Refresh data
-    await fetchRevenueData();
+
+    for (const row of removedRows) {
+      if (typeof row.id === 'string' && row.id.startsWith('temp_')) continue;
+      const { error } = await supabase.from('revenue_entries').delete().eq('id', row.id).eq('user_id', user.id);
+      if (error) {
+        console.error('Delete error:', error);
+        toast({ title: "Error deleting revenue entry", description: error.message, variant: "destructive" });
+      } else {
+        mutated = true;
+      }
+    }
+
+    if (mutated) {
+      await fetchRevenueData();
+    }
   };
 
   const columns: TableColumn[] = [

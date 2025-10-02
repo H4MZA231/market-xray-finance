@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Plus, Edit, Trash2, Save, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 export interface TableColumn {
   key: string;
@@ -40,6 +41,7 @@ export const EditableTable = ({
 }: EditableTableProps) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingRow, setEditingRow] = useState<TableRow | null>(null);
+  const { toast } = useToast();
 
   const handleAdd = () => {
     const newRow: TableRow = {
@@ -61,6 +63,24 @@ export const EditableTable = ({
 
   const handleSave = () => {
     if (editingRow) {
+      // Validate required fields before saving
+      const missing = columns.filter(col => col.required).filter(col => {
+        const val = editingRow[col.key];
+        if (col.type === 'number' || col.type === 'currency' || col.type === 'percentage') {
+          return val === '' || val === null || val === undefined || isNaN(Number(val));
+        }
+        return val === '' || val === null || val === undefined;
+      });
+
+      if (missing.length > 0) {
+        toast({
+          title: "Missing required fields",
+          description: `Please fill: ${missing.map(m => m.label).join(', ')}`,
+          variant: "destructive",
+        });
+        return; // Do not propagate changes
+      }
+
       const updatedData = data.map(row => 
         row.id === editingRow.id ? editingRow : row
       );

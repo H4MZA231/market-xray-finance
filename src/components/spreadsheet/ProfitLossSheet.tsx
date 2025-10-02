@@ -41,8 +41,9 @@ export const ProfitLossSheet = () => {
   };
 
   const handleDataChange = async (newData: TableRow[]) => {
+    const prevData = plData;
     setPLData(newData);
-    
+
     if (!user) {
       toast({
         title: "Authentication required",
@@ -51,51 +52,67 @@ export const ProfitLossSheet = () => {
       });
       return;
     }
-    
-    for (const row of newData) {
-      const isNewRow = row.id && typeof row.id === 'string' && row.id.startsWith('temp_');
-      
-      if (isNewRow) {
+
+    const addedRows = newData.filter(r => !prevData.some(p => p.id === r.id));
+    const removedRows = prevData.filter(p => !newData.some(r => r.id === p.id));
+    const updatedRows = newData.filter(r => {
+      const prev = prevData.find(p => p.id === r.id);
+      return prev && JSON.stringify(prev) !== JSON.stringify(r);
+    });
+
+    let mutated = false;
+
+    for (const row of updatedRows) {
+      const isTemp = typeof row.id === 'string' && row.id.startsWith('temp_');
+      if (isTemp) {
+        if (!row.month || row.revenueTotal === undefined || row.expensesTotal === undefined) { continue; }
         const { error } = await supabase
           .from('profit_loss_entries')
           .insert({
             user_id: user.id,
             month: row.month,
-            revenue_total: row.revenueTotal,
-            expenses_total: row.expensesTotal
+            revenue_total: Number(row.revenueTotal),
+            expenses_total: Number(row.expensesTotal),
           });
-
         if (error) {
           console.error('Insert error:', error);
-          toast({
-            title: "Error saving P&L entry",
-            description: error.message,
-            variant: "destructive",
-          });
+          toast({ title: "Error saving P&L entry", description: error.message, variant: "destructive" });
+        } else {
+          mutated = true;
         }
-      } else if (row.id) {
+      } else {
         const { error } = await supabase
           .from('profit_loss_entries')
           .update({
             month: row.month,
-            revenue_total: row.revenueTotal,
-            expenses_total: row.expensesTotal
+            revenue_total: Number(row.revenueTotal),
+            expenses_total: Number(row.expensesTotal),
           })
           .eq('id', row.id)
           .eq('user_id', user.id);
-
         if (error) {
           console.error('Update error:', error);
-          toast({
-            title: "Error updating P&L entry",
-            description: error.message,
-            variant: "destructive",
-          });
+          toast({ title: "Error updating P&L entry", description: error.message, variant: "destructive" });
+        } else {
+          mutated = true;
         }
       }
     }
-    
-    await fetchPLData();
+
+    for (const row of removedRows) {
+      if (typeof row.id === 'string' && row.id.startsWith('temp_')) continue;
+      const { error } = await supabase.from('profit_loss_entries').delete().eq('id', row.id).eq('user_id', user.id);
+      if (error) {
+        console.error('Delete error:', error);
+        toast({ title: "Error deleting P&L entry", description: error.message, variant: "destructive" });
+      } else {
+        mutated = true;
+      }
+    }
+
+    if (mutated) {
+      await fetchPLData();
+    }
   };
 
   const columns: TableColumn[] = [

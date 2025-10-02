@@ -44,8 +44,9 @@ export const DebtSheet = () => {
   };
 
   const handleDataChange = async (newData: TableRow[]) => {
+    const prevData = debtData;
     setDebtData(newData);
-    
+
     if (!user) {
       toast({
         title: "Authentication required",
@@ -54,60 +55,75 @@ export const DebtSheet = () => {
       });
       return;
     }
-    
-    for (const row of newData) {
-      const isNewRow = row.id && typeof row.id === 'string' && row.id.startsWith('temp_');
-      
-      if (isNewRow) {
+
+    const removedRows = prevData.filter(p => !newData.some(r => r.id === p.id));
+    const updatedRows = newData.filter(r => {
+      const prev = prevData.find(p => p.id === r.id);
+      return prev && JSON.stringify(prev) !== JSON.stringify(r);
+    });
+
+    let mutated = false;
+
+    for (const row of updatedRows) {
+      const isTemp = typeof row.id === 'string' && row.id.startsWith('temp_');
+      if (isTemp) {
+        if (!row.lender || row.amountBorrowed === undefined || !row.dueDate || row.remainingBalance === undefined || row.interestRate === undefined || row.monthlyPayment === undefined) { continue; }
         const { error } = await supabase
           .from('debt_entries')
           .insert({
             user_id: user.id,
             creditor: row.lender,
             type: 'Loan',
-            original_amount: row.amountBorrowed,
-            current_balance: row.remainingBalance,
-            interest_rate: row.interestRate,
-            monthly_payment: row.monthlyPayment,
+            original_amount: Number(row.amountBorrowed),
+            current_balance: Number(row.remainingBalance),
+            interest_rate: Number(row.interestRate),
+            monthly_payment: Number(row.monthlyPayment),
             due_date: row.dueDate,
-            notes: row.notes || null
+            notes: row.notes || null,
           });
-
         if (error) {
           console.error('Insert error:', error);
-          toast({
-            title: "Error saving debt entry",
-            description: error.message,
-            variant: "destructive",
-          });
+          toast({ title: "Error saving debt entry", description: error.message, variant: "destructive" });
+        } else {
+          mutated = true;
         }
-      } else if (row.id) {
+      } else {
         const { error } = await supabase
           .from('debt_entries')
           .update({
             creditor: row.lender,
-            original_amount: row.amountBorrowed,
-            current_balance: row.remainingBalance,
-            interest_rate: row.interestRate,
-            monthly_payment: row.monthlyPayment,
+            original_amount: Number(row.amountBorrowed),
+            current_balance: Number(row.remainingBalance),
+            interest_rate: Number(row.interestRate),
+            monthly_payment: Number(row.monthlyPayment),
             due_date: row.dueDate,
-            notes: row.notes || null
+            notes: row.notes || null,
           })
           .eq('id', row.id)
           .eq('user_id', user.id);
-
         if (error) {
           console.error('Update error:', error);
-          toast({
-            title: "Error updating debt entry",
-            description: error.message,
-            variant: "destructive",
-          });
+          toast({ title: "Error updating debt entry", description: error.message, variant: "destructive" });
+        } else {
+          mutated = true;
         }
       }
     }
-    
-    await fetchDebtData();
+
+    for (const row of removedRows) {
+      if (typeof row.id === 'string' && row.id.startsWith('temp_')) continue;
+      const { error } = await supabase.from('debt_entries').delete().eq('id', row.id).eq('user_id', user.id);
+      if (error) {
+        console.error('Delete error:', error);
+        toast({ title: "Error deleting debt entry", description: error.message, variant: "destructive" });
+      } else {
+        mutated = true;
+      }
+    }
+
+    if (mutated) {
+      await fetchDebtData();
+    }
   };
 
   const columns: TableColumn[] = [

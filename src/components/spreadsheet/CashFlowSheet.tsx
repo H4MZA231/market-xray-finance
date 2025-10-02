@@ -40,8 +40,9 @@ export const CashFlowSheet = () => {
   };
 
   const handleDataChange = async (newData: TableRow[]) => {
+    const prevData = cashFlowData;
     setCashFlowData(newData);
-    
+
     if (!user) {
       toast({
         title: "Authentication required",
@@ -50,51 +51,66 @@ export const CashFlowSheet = () => {
       });
       return;
     }
-    
-    for (const row of newData) {
-      const isNewRow = row.id && typeof row.id === 'string' && row.id.startsWith('temp_');
-      
-      if (isNewRow) {
+
+    const removedRows = prevData.filter(p => !newData.some(r => r.id === p.id));
+    const updatedRows = newData.filter(r => {
+      const prev = prevData.find(p => p.id === r.id);
+      return prev && JSON.stringify(prev) !== JSON.stringify(r);
+    });
+
+    let mutated = false;
+
+    for (const row of updatedRows) {
+      const isTemp = typeof row.id === 'string' && row.id.startsWith('temp_');
+      if (isTemp) {
+        if (!row.month || row.projectedRevenue === undefined || row.projectedExpenses === undefined) { continue; }
         const { error } = await supabase
           .from('cash_flow_entries')
           .insert({
             user_id: user.id,
             month: row.month,
-            inflows: row.projectedRevenue,
-            outflows: row.projectedExpenses
+            inflows: Number(row.projectedRevenue),
+            outflows: Number(row.projectedExpenses),
           });
-
         if (error) {
           console.error('Insert error:', error);
-          toast({
-            title: "Error saving cash flow entry",
-            description: error.message,
-            variant: "destructive",
-          });
+          toast({ title: "Error saving cash flow entry", description: error.message, variant: "destructive" });
+        } else {
+          mutated = true;
         }
-      } else if (row.id) {
+      } else {
         const { error } = await supabase
           .from('cash_flow_entries')
           .update({
             month: row.month,
-            inflows: row.projectedRevenue,
-            outflows: row.projectedExpenses
+            inflows: Number(row.projectedRevenue),
+            outflows: Number(row.projectedExpenses),
           })
           .eq('id', row.id)
           .eq('user_id', user.id);
-
         if (error) {
           console.error('Update error:', error);
-          toast({
-            title: "Error updating cash flow entry",
-            description: error.message,
-            variant: "destructive",
-          });
+          toast({ title: "Error updating cash flow entry", description: error.message, variant: "destructive" });
+        } else {
+          mutated = true;
         }
       }
     }
-    
-    await fetchCashFlowData();
+
+    for (const row of removedRows) {
+      if (typeof row.id === 'string' && row.id.startsWith('temp_')) continue;
+      const { error } = await supabase.from('cash_flow_entries').delete().eq('id', row.id).eq('user_id', user.id);
+      if (error) {
+        console.error('Delete error:', error);
+        toast({ title: "Error deleting cash flow entry", description: error.message, variant: "destructive" });
+      } else {
+        mutated = true;
+      }
+    }
+
+    if (mutated) {
+      await fetchCashFlowData();
+    }
   };
 
   const startingCashBalance = 0;

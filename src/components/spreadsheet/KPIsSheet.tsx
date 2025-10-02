@@ -57,8 +57,9 @@ export const KPIsSheet = () => {
   };
 
   const handleDataChange = async (newData: TableRow[]) => {
+    const prevData = kpiData;
     setKPIData(newData);
-    
+
     if (!user) {
       toast({
         title: "Authentication required",
@@ -67,53 +68,68 @@ export const KPIsSheet = () => {
       });
       return;
     }
-    
-    for (const row of newData) {
-      const isNewRow = row.id && typeof row.id === 'string' && row.id.startsWith('temp_');
-      
-      if (isNewRow) {
+
+    const removedRows = prevData.filter(p => !newData.some(r => r.id === p.id));
+    const updatedRows = newData.filter(r => {
+      const prev = prevData.find(p => p.id === r.id);
+      return prev && JSON.stringify(prev) !== JSON.stringify(r);
+    });
+
+    let mutated = false;
+
+    for (const row of updatedRows) {
+      const isTemp = typeof row.id === 'string' && row.id.startsWith('temp_');
+      if (isTemp) {
+        if (!row.metricName || row.value === undefined || row.target === undefined) { continue; }
         const { error } = await supabase
           .from('kpi_entries')
           .insert({
             user_id: user.id,
             metric_name: row.metricName,
-            value: row.value,
-            target: row.target,
-            category: row.category || 'General'
+            value: Number(row.value),
+            target: Number(row.target),
+            category: row.category || 'General',
           });
-
         if (error) {
           console.error('Insert error:', error);
-          toast({
-            title: "Error saving KPI entry",
-            description: error.message,
-            variant: "destructive",
-          });
+          toast({ title: "Error saving KPI entry", description: error.message, variant: "destructive" });
+        } else {
+          mutated = true;
         }
-      } else if (row.id) {
+      } else {
         const { error } = await supabase
           .from('kpi_entries')
           .update({
             metric_name: row.metricName,
-            value: row.value,
-            target: row.target,
-            category: row.category || 'General'
+            value: Number(row.value),
+            target: Number(row.target),
+            category: row.category || 'General',
           })
           .eq('id', row.id)
           .eq('user_id', user.id);
-
         if (error) {
           console.error('Update error:', error);
-          toast({
-            title: "Error updating KPI entry",
-            description: error.message,
-            variant: "destructive",
-          });
+          toast({ title: "Error updating KPI entry", description: error.message, variant: "destructive" });
+        } else {
+          mutated = true;
         }
       }
     }
-    
-    await fetchKPIData();
+
+    for (const row of removedRows) {
+      if (typeof row.id === 'string' && row.id.startsWith('temp_')) continue;
+      const { error } = await supabase.from('kpi_entries').delete().eq('id', row.id).eq('user_id', user.id);
+      if (error) {
+        console.error('Delete error:', error);
+        toast({ title: "Error deleting KPI entry", description: error.message, variant: "destructive" });
+      } else {
+        mutated = true;
+      }
+    }
+
+    if (mutated) {
+      await fetchKPIData();
+    }
   };
 
   const columns: TableColumn[] = [
