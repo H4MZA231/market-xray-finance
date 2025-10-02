@@ -11,9 +11,19 @@ export const DebtSheet = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user) {
-      fetchDebtData();
-    }
+    if (!user) return;
+
+    fetchDebtData();
+
+    // Subscribe to real-time changes
+    const channel = supabase
+      .channel('debt-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'debt_entries', filter: `user_id=eq.${user.id}` }, fetchDebtData)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const fetchDebtData = async () => {

@@ -11,9 +11,19 @@ export const KPIsSheet = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user) {
-      fetchKPIData();
-    }
+    if (!user) return;
+
+    fetchKPIData();
+
+    // Subscribe to real-time changes
+    const channel = supabase
+      .channel('kpi-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'kpi_entries', filter: `user_id=eq.${user.id}` }, fetchKPIData)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const fetchKPIData = async () => {

@@ -10,9 +10,19 @@ export const RevenueSheet = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user) {
-      fetchRevenueData();
-    }
+    if (!user) return;
+
+    fetchRevenueData();
+
+    // Subscribe to real-time changes
+    const channel = supabase
+      .channel('revenue-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'revenue_entries', filter: `user_id=eq.${user.id}` }, fetchRevenueData)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const fetchRevenueData = async () => {

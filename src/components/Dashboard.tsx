@@ -15,19 +15,10 @@ import { MetricsOverview } from "./MetricsOverview";
 import { ExpenseTracker } from "./ExpenseTracker";
 import { DebtManagement } from "./DebtManagement";
 import { AIInsights } from "./AIInsights";
+import { useDashboardData } from "@/hooks/useDashboardData";
 
 const Dashboard = () => {
-  // Default empty financial data - will be calculated from database
-  const financialData = {
-    totalRevenue: 0,
-    totalExpenses: 0,
-    netProfit: 0,
-    totalDebt: 0,
-    cashFlow: 0,
-    burnRate: 0,
-    runway: 0,
-    profitMargin: 0
-  };
+  const financialData = useDashboardData();
 
   const healthScore = Math.max(0, Math.min(100, 
     (financialData.netProfit / financialData.totalRevenue) * 100 + 

@@ -10,9 +10,19 @@ export const ProfitLossSheet = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user) {
-      fetchPLData();
-    }
+    if (!user) return;
+
+    fetchPLData();
+
+    // Subscribe to real-time changes
+    const channel = supabase
+      .channel('pl-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profit_loss_entries', filter: `user_id=eq.${user.id}` }, fetchPLData)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const fetchPLData = async () => {

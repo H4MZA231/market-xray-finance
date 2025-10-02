@@ -10,9 +10,19 @@ export const ExpensesSheet = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user) {
-      fetchExpensesData();
-    }
+    if (!user) return;
+
+    fetchExpensesData();
+
+    // Subscribe to real-time changes
+    const channel = supabase
+      .channel('expense-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'expense_entries', filter: `user_id=eq.${user.id}` }, fetchExpensesData)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const fetchExpensesData = async () => {

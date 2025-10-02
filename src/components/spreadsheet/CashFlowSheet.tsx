@@ -10,9 +10,19 @@ export const CashFlowSheet = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user) {
-      fetchCashFlowData();
-    }
+    if (!user) return;
+
+    fetchCashFlowData();
+
+    // Subscribe to real-time changes
+    const channel = supabase
+      .channel('cashflow-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cash_flow_entries', filter: `user_id=eq.${user.id}` }, fetchCashFlowData)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const fetchCashFlowData = async () => {
