@@ -20,11 +20,13 @@ import { useDashboardData } from "@/hooks/useDashboardData";
 const Dashboard = () => {
   const financialData = useDashboardData();
 
-  const healthScore = Math.max(0, Math.min(100, 
-    (financialData.netProfit / financialData.totalRevenue) * 100 + 
-    (financialData.cashFlow > 0 ? 20 : -20) +
-    (financialData.totalDebt < financialData.netProfit * 2 ? 10 : -30)
-  ));
+  const healthScore = financialData.totalRevenue > 0 
+    ? Math.max(0, Math.min(100, 
+        (financialData.netProfit / financialData.totalRevenue) * 100 + 
+        (financialData.cashFlow > 0 ? 20 : -20) +
+        (financialData.totalDebt < financialData.netProfit * 2 ? 10 : -30)
+      ))
+    : 50;
 
   const getHealthColor = (score: number) => {
     if (score >= 70) return "status-positive";
@@ -69,11 +71,7 @@ const Dashboard = () => {
                 </div>
               </div>
               <div className="text-3xl font-bold text-financial text-success">
-                ${financialData.totalRevenue.toLocaleString()}
-              </div>
-              <div className="flex items-center gap-2 mt-2">
-                <TrendingUp className="w-4 h-4 text-success" />
-                <span className="text-sm text-success">+12.5% vs last month</span>
+                ${financialData.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
             </Card>
 
@@ -89,15 +87,15 @@ const Dashboard = () => {
                   </div>
                 </div>
               </div>
-              <div className="text-3xl font-bold text-financial text-success">
-                ${financialData.netProfit.toLocaleString()}
+              <div className={`text-3xl font-bold text-financial ${financialData.netProfit >= 0 ? 'text-success' : 'text-destructive'}`}>
+                ${financialData.netProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
               <div className="mt-2">
                 <div className="flex items-center justify-between text-sm mb-1">
                   <span>Profit Margin</span>
-                  <span className="text-financial">{financialData.profitMargin}%</span>
+                  <span className="text-financial">{financialData.profitMargin.toFixed(1)}%</span>
                 </div>
-                <Progress value={financialData.profitMargin} className="h-2" />
+                <Progress value={Math.max(0, Math.min(100, financialData.profitMargin))} className="h-2" />
               </div>
             </Card>
           </div>
@@ -124,21 +122,21 @@ const Dashboard = () => {
                   financialData.runway > 12 ? 'text-success' : 
                   financialData.runway > 6 ? 'text-warning' : 'text-destructive'
                 }`}>
-                  {financialData.runway} months
+                  {Math.round(financialData.runway)} months
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Monthly Burn Rate</span>
                 <span className="text-financial font-semibold text-destructive">
-                  -${financialData.burnRate.toLocaleString()}
+                  ${financialData.burnRate.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Debt-to-Profit Ratio</span>
+                <span className="text-sm text-muted-foreground">Total Debt</span>
                 <span className={`text-financial font-semibold ${
-                  financialData.totalDebt / financialData.netProfit < 1.5 ? 'text-success' : 'text-warning'
+                  financialData.totalDebt === 0 ? 'text-success' : 'text-warning'
                 }`}>
-                  {(financialData.totalDebt / financialData.netProfit).toFixed(1)}:1
+                  ${financialData.totalDebt.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
               <div className="flex items-center justify-between">
