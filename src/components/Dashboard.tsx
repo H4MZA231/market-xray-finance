@@ -10,7 +10,9 @@ import {
   AlertTriangle,
   Target,
   Activity,
-  PieChart
+  PieChart,
+  Brain,
+  Loader2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -21,6 +23,37 @@ interface KPIEntry {
   category: string;
   value: number;
   target: number;
+}
+
+interface RevenueEntry {
+  amount: number;
+  category: string;
+  date: string;
+}
+
+interface ExpenseEntry {
+  amount: number;
+  category: string;
+  date: string;
+}
+
+interface DebtEntry {
+  current_balance: number;
+  monthly_payment: number;
+  creditor: string;
+  type: string;
+}
+
+interface CashFlowEntry {
+  inflows: number;
+  outflows: number;
+  month: string;
+}
+
+interface ProfitLossEntry {
+  revenue_total: number;
+  expenses_total: number;
+  month: string;
 }
 
 interface DashboardData {
@@ -34,6 +67,9 @@ interface DashboardData {
   burnRate: number;
   runway: number;
   kpis: KPIEntry[];
+  revenueByCategory: Record<string, number>;
+  expenseByCategory: Record<string, number>;
+  debtByType: Record<string, number>;
 }
 
 const Dashboard = () => {
@@ -49,6 +85,9 @@ const Dashboard = () => {
     burnRate: 0,
     runway: 0,
     kpis: [],
+    revenueByCategory: {},
+    expenseByCategory: {},
+    debtByType: {},
   });
   const [loading, setLoading] = useState(true);
 
@@ -59,36 +98,62 @@ const Dashboard = () => {
 
       // Fetch all financial data in parallel
       const [revenueRes, expensesRes, debtRes, cashFlowRes, profitLossRes, kpiRes] = await Promise.all([
-        supabase.from('revenue_entries').select('amount').eq('user_id', user.id),
-        supabase.from('expense_entries').select('amount').eq('user_id', user.id),
-        supabase.from('debt_entries').select('current_balance, monthly_payment').eq('user_id', user.id),
-        supabase.from('cash_flow_entries').select('inflows, outflows').eq('user_id', user.id),
-        supabase.from('profit_loss_entries').select('revenue_total, expenses_total').eq('user_id', user.id),
+        supabase.from('revenue_entries').select('amount, category, date').eq('user_id', user.id),
+        supabase.from('expense_entries').select('amount, category, date').eq('user_id', user.id),
+        supabase.from('debt_entries').select('current_balance, monthly_payment, creditor, type').eq('user_id', user.id),
+        supabase.from('cash_flow_entries').select('inflows, outflows, month').eq('user_id', user.id),
+        supabase.from('profit_loss_entries').select('revenue_total, expenses_total, month').eq('user_id', user.id),
         supabase.from('kpi_entries').select('*').eq('user_id', user.id)
       ]);
 
       // Aggregate Total Revenue
-      const totalRevenue = revenueRes.data?.reduce((sum, item) => sum + Number(item.amount), 0) || 0;
+      const revenues = revenueRes.data as RevenueEntry[] || [];
+      const totalRevenue = revenues.reduce((sum, item) => sum + Number(item.amount), 0);
+      
+      // Aggregate Revenue by Category
+      const revenueByCategory: Record<string, number> = {};
+      revenues.forEach(item => {
+        const cat = item.category || 'Uncategorized';
+        revenueByCategory[cat] = (revenueByCategory[cat] || 0) + Number(item.amount);
+      });
       
       // Aggregate Total Expenses
-      const totalExpenses = expensesRes.data?.reduce((sum, item) => sum + Number(item.amount), 0) || 0;
+      const expenses = expensesRes.data as ExpenseEntry[] || [];
+      const totalExpenses = expenses.reduce((sum, item) => sum + Number(item.amount), 0);
+      
+      // Aggregate Expenses by Category
+      const expenseByCategory: Record<string, number> = {};
+      expenses.forEach(item => {
+        const cat = item.category || 'Uncategorized';
+        expenseByCategory[cat] = (expenseByCategory[cat] || 0) + Number(item.amount);
+      });
       
       // Aggregate Total Debt
-      const totalDebt = debtRes.data?.reduce((sum, item) => sum + Number(item.current_balance), 0) || 0;
+      const debts = debtRes.data as DebtEntry[] || [];
+      const totalDebt = debts.reduce((sum, item) => sum + Number(item.current_balance), 0);
+      
+      // Aggregate Debt by Type
+      const debtByType: Record<string, number> = {};
+      debts.forEach(item => {
+        const type = item.type || 'Other';
+        debtByType[type] = (debtByType[type] || 0) + Number(item.current_balance);
+      });
       
       // Aggregate monthly debt payments
-      const monthlyDebtPayments = debtRes.data?.reduce((sum, item) => sum + Number(item.monthly_payment), 0) || 0;
+      const monthlyDebtPayments = debts.reduce((sum, item) => sum + Number(item.monthly_payment), 0);
       
       // Aggregate Cash Flow
-      const totalInflows = cashFlowRes.data?.reduce((sum, item) => sum + Number(item.inflows), 0) || 0;
-      const totalOutflows = cashFlowRes.data?.reduce((sum, item) => sum + Number(item.outflows), 0) || 0;
+      const cashFlowEntries = cashFlowRes.data as CashFlowEntry[] || [];
+      const totalInflows = cashFlowEntries.reduce((sum, item) => sum + Number(item.inflows), 0);
+      const totalOutflows = cashFlowEntries.reduce((sum, item) => sum + Number(item.outflows), 0);
       const cashFlow = totalInflows - totalOutflows;
 
       // Calculate Net Profit
+      const profitLossEntries = profitLossRes.data as ProfitLossEntry[] || [];
       let netProfit: number;
-      if (profitLossRes.data && profitLossRes.data.length > 0) {
-        const plRevenue = profitLossRes.data.reduce((sum, item) => sum + Number(item.revenue_total), 0);
-        const plExpenses = profitLossRes.data.reduce((sum, item) => sum + Number(item.expenses_total), 0);
+      if (profitLossEntries.length > 0) {
+        const plRevenue = profitLossEntries.reduce((sum, item) => sum + Number(item.revenue_total), 0);
+        const plExpenses = profitLossEntries.reduce((sum, item) => sum + Number(item.expenses_total), 0);
         netProfit = plRevenue - plExpenses;
       } else {
         netProfit = totalRevenue - totalExpenses;
@@ -98,12 +163,7 @@ const Dashboard = () => {
       const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
       
       // Burn rate includes expenses and debt payments
-      const monthlyBurnRate = (totalExpenses + monthlyDebtPayments) / Math.max(1, 
-        Math.max(
-          revenueRes.data?.length || 1,
-          expensesRes.data?.length || 1
-        )
-      );
+      const monthlyBurnRate = totalExpenses + monthlyDebtPayments;
       
       // Runway calculation
       const runway = monthlyBurnRate > 0 ? Math.max(0, cashFlow / monthlyBurnRate) : 0;
@@ -119,6 +179,9 @@ const Dashboard = () => {
         burnRate: monthlyBurnRate,
         runway,
         kpis: kpiRes.data || [],
+        revenueByCategory,
+        expenseByCategory,
+        debtByType,
       });
       setLoading(false);
     } catch (error) {
@@ -193,7 +256,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
@@ -204,7 +267,7 @@ const Dashboard = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold text-foreground">Financial Dashboard</h1>
-          <p className="text-muted-foreground mt-2">Real-time financial overview and metrics</p>
+          <p className="text-muted-foreground mt-2">Real-time aggregated financial overview</p>
         </div>
         <div className="flex items-center gap-4">
           <Badge className={`text-lg px-4 py-2 ${getHealthColor(healthScore)}`}>
@@ -281,67 +344,115 @@ const Dashboard = () => {
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column - Cash Flow & Critical Metrics */}
+        {/* Left Column - Revenue & Expenses Breakdown */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Cash Flow Card */}
+          {/* Revenue by Category */}
+          <Card className="card-elegant p-6">
+            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-success" />
+              Revenue by Category
+            </h3>
+            {Object.keys(data.revenueByCategory).length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No revenue data yet</p>
+            ) : (
+              <div className="space-y-3">
+                {Object.entries(data.revenueByCategory).map(([category, amount]) => (
+                  <div key={category} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+                    <span className="text-sm font-medium">{category}</span>
+                    <span className="text-financial font-semibold text-success">
+                      ${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          {/* Expenses by Category */}
+          <Card className="card-elegant p-6">
+            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+              <TrendingDown className="w-5 h-5 text-destructive" />
+              Expenses by Category
+            </h3>
+            {Object.keys(data.expenseByCategory).length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No expense data yet</p>
+            ) : (
+              <div className="space-y-3">
+                {Object.entries(data.expenseByCategory).map(([category, amount]) => (
+                  <div key={category} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+                    <span className="text-sm font-medium">{category}</span>
+                    <span className="text-financial font-semibold text-destructive">
+                      ${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          {/* Debt by Type */}
+          <Card className="card-elegant p-6">
+            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+              <CreditCard className="w-5 h-5 text-warning" />
+              Debt by Type
+            </h3>
+            {Object.keys(data.debtByType).length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No debt data</p>
+            ) : (
+              <div className="space-y-3">
+                {Object.entries(data.debtByType).map(([type, amount]) => (
+                  <div key={type} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+                    <span className="text-sm font-medium">{type}</span>
+                    <span className="text-financial font-semibold text-warning">
+                      ${Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          {/* Cash Flow & Critical Metrics */}
           <Card className="card-elegant p-6">
             <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
               <Activity className="w-5 h-5 text-accent" />
-              Cash Flow Summary
+              Cash Flow & Critical Metrics
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <p className="text-sm text-muted-foreground mb-2">Current Cash Flow</p>
-                <div className={`text-2xl font-bold text-financial ${data.cashFlow >= 0 ? 'text-success' : 'text-destructive'}`}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-3 bg-secondary rounded-lg">
+                <p className="text-xs text-muted-foreground mb-1">Current Cash Flow</p>
+                <div className={`text-xl font-bold text-financial ${data.cashFlow >= 0 ? 'text-success' : 'text-destructive'}`}>
                   ${data.cashFlow.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground mb-2">Monthly Burn Rate</p>
-                <div className="text-2xl font-bold text-financial text-destructive">
+              <div className="p-3 bg-secondary rounded-lg">
+                <p className="text-xs text-muted-foreground mb-1">Monthly Burn Rate</p>
+                <div className="text-xl font-bold text-financial text-destructive">
                   ${data.burnRate.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </div>
               </div>
-            </div>
-          </Card>
-
-          {/* Critical Metrics */}
-          <Card className="card-elegant p-6">
-            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-warning" />
-              Critical Business Metrics
-            </h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-secondary rounded-lg">
-                <span className="text-sm text-muted-foreground">Cash Runway</span>
-                <span className={`text-financial font-semibold ${
+              <div className="p-3 bg-secondary rounded-lg">
+                <p className="text-xs text-muted-foreground mb-1">Cash Runway</p>
+                <div className={`text-xl font-bold text-financial ${
                   data.runway > 12 ? 'text-success' : 
                   data.runway > 6 ? 'text-warning' : 'text-destructive'
                 }`}>
                   {Math.round(data.runway)} months
-                </span>
+                </div>
               </div>
-              <div className="flex items-center justify-between p-3 bg-secondary rounded-lg">
-                <span className="text-sm text-muted-foreground">Monthly Debt Payments</span>
-                <span className="text-financial font-semibold text-warning">
+              <div className="p-3 bg-secondary rounded-lg">
+                <p className="text-xs text-muted-foreground mb-1">Monthly Debt Payments</p>
+                <div className="text-xl font-bold text-financial text-warning">
                   ${data.monthlyDebtPayments.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-secondary rounded-lg">
-                <span className="text-sm text-muted-foreground">Profit Margin</span>
-                <span className={`text-financial font-semibold ${
-                  data.profitMargin > 20 ? 'text-success' : 
-                  data.profitMargin > 10 ? 'text-warning' : 'text-destructive'
-                }`}>
-                  {data.profitMargin.toFixed(1)}%
-                </span>
+                </div>
               </div>
             </div>
           </Card>
         </div>
 
-        {/* Right Column - KPIs */}
+        {/* Right Column - KPIs & Quick Stats */}
         <div className="space-y-6">
+          {/* KPIs */}
           <Card className="card-elegant p-6">
             <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
               <Target className="w-5 h-5 text-accent" />
@@ -388,22 +499,63 @@ const Dashboard = () => {
               Quick Stats
             </h3>
             <div className="space-y-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Revenue to Expense Ratio</span>
+              <div className="flex items-center justify-between text-sm p-3 bg-secondary rounded-lg">
+                <span className="text-muted-foreground">Revenue Categories</span>
+                <span className="text-financial font-semibold">{Object.keys(data.revenueByCategory).length}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm p-3 bg-secondary rounded-lg">
+                <span className="text-muted-foreground">Expense Categories</span>
+                <span className="text-financial font-semibold">{Object.keys(data.expenseByCategory).length}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm p-3 bg-secondary rounded-lg">
+                <span className="text-muted-foreground">Debt Types</span>
+                <span className="text-financial font-semibold">{Object.keys(data.debtByType).length}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm p-3 bg-secondary rounded-lg">
+                <span className="text-muted-foreground">Active KPIs</span>
+                <span className="text-financial font-semibold">{data.kpis.length}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm p-3 bg-secondary rounded-lg">
+                <span className="text-muted-foreground">Revenue/Expense Ratio</span>
                 <span className="text-financial font-semibold">
                   {data.totalExpenses > 0 ? (data.totalRevenue / data.totalExpenses).toFixed(2) : '0.00'}x
                 </span>
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Debt to Profit Ratio</span>
-                <span className="text-financial font-semibold">
-                  {data.netProfit > 0 ? (data.totalDebt / data.netProfit).toFixed(2) : 'N/A'}x
-                </span>
+            </div>
+          </Card>
+
+          {/* AI Insights Placeholder */}
+          <Card className="card-elegant p-6">
+            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+              <Brain className="w-5 h-5 text-accent" />
+              AI Insights
+            </h3>
+            <div className="space-y-3">
+              <div className="p-3 bg-secondary rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  {data.profitMargin > 20 
+                    ? "Excellent profit margin! Consider reinvesting in growth."
+                    : data.profitMargin > 10
+                    ? "Good profit margin. Monitor expenses to maintain stability."
+                    : "Low profit margin. Review expenses and pricing strategy."}
+                </p>
               </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Active KPIs</span>
-                <span className="text-financial font-semibold">{data.kpis.length}</span>
+              <div className="p-3 bg-secondary rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  {data.runway > 12
+                    ? "Strong cash runway. Good financial health."
+                    : data.runway > 6
+                    ? "Moderate runway. Plan for future cash needs."
+                    : "Low runway. Focus on improving cash flow immediately."}
+                </p>
               </div>
+              {data.totalDebt > 0 && (
+                <div className="p-3 bg-secondary rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    Focus on reducing debt to improve financial flexibility.
+                  </p>
+                </div>
+              )}
             </div>
           </Card>
         </div>
