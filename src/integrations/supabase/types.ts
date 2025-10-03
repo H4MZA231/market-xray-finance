@@ -221,39 +221,6 @@ export type Database = {
         }
         Relationships: []
       }
-      profiles_backup: {
-        Row: {
-          avatar_url: string | null
-          company_name: string | null
-          created_at: string | null
-          full_name: string | null
-          id: string | null
-          role: string | null
-          updated_at: string | null
-          user_id: string | null
-        }
-        Insert: {
-          avatar_url?: string | null
-          company_name?: string | null
-          created_at?: string | null
-          full_name?: string | null
-          id?: string | null
-          role?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          avatar_url?: string | null
-          company_name?: string | null
-          created_at?: string | null
-          full_name?: string | null
-          id?: string | null
-          role?: string | null
-          updated_at?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       profit_loss_entries: {
         Row: {
           created_at: string | null
