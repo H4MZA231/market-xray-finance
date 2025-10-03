@@ -59,6 +59,54 @@ export type Database = {
         }
         Relationships: []
       }
+      dashboards: {
+        Row: {
+          burn_rate: number
+          cash_flow: number
+          created_at: string
+          id: string
+          monthly_debt_payments: number
+          net_profit: number
+          profit_margin: number
+          runway: number
+          total_debt: number
+          total_expenses: number
+          total_revenue: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          burn_rate?: number
+          cash_flow?: number
+          created_at?: string
+          id?: string
+          monthly_debt_payments?: number
+          net_profit?: number
+          profit_margin?: number
+          runway?: number
+          total_debt?: number
+          total_expenses?: number
+          total_revenue?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          burn_rate?: number
+          cash_flow?: number
+          created_at?: string
+          id?: string
+          monthly_debt_payments?: number
+          net_profit?: number
+          profit_margin?: number
+          runway?: number
+          total_debt?: number
+          total_expenses?: number
+          total_revenue?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       debt_entries: {
         Row: {
           created_at: string | null
