@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -9,21 +10,27 @@ import {
   AlertTriangle,
   CheckCircle,
   Target,
-  BarChart3
+  BarChart3,
+  Loader2
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 export const DashboardSheet = () => {
-  // Empty data - will be calculated from other sheets in real implementation
-  const dashboardData = {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [dashboardData, setDashboardData] = useState({
     revenue: {
       total: 0,
       growth: 0,
-      target: 0
+      target: 100000
     },
     expenses: {
       total: 0,
       growth: 0,
-      budget: 0
+      budget: 80000
     },
     netProfit: {
       amount: 0,
@@ -46,7 +53,125 @@ export const DashboardSheet = () => {
       critical: 0,
       score: 0
     }
+  });
+
+  const fetchDashboardData = async () => {
+    try {
+      if (!user) return;
+
+      // Fetch all financial data in parallel
+      const [revenueRes, expensesRes, debtRes, cashFlowRes, kpiRes] = await Promise.all([
+        supabase.from('revenue_entries').select('amount').eq('user_id', user.id),
+        supabase.from('expense_entries').select('amount').eq('user_id', user.id),
+        supabase.from('debt_entries').select('current_balance, monthly_payment, interest_rate').eq('user_id', user.id),
+        supabase.from('cash_flow_entries').select('inflows, outflows').eq('user_id', user.id),
+        supabase.from('kpi_entries').select('value, target').eq('user_id', user.id)
+      ]);
+
+      // Calculate totals
+      const totalRevenue = (revenueRes.data || []).reduce((sum, item) => sum + Number(item.amount), 0);
+      const totalExpenses = (expensesRes.data || []).reduce((sum, item) => sum + Number(item.amount), 0);
+      const totalDebt = (debtRes.data || []).reduce((sum, item) => sum + Number(item.current_balance), 0);
+      const monthlyPayments = (debtRes.data || []).reduce((sum, item) => sum + Number(item.monthly_payment), 0);
+      
+      const avgInterestRate = debtRes.data && debtRes.data.length > 0
+        ? (debtRes.data.reduce((sum, item) => sum + Number(item.interest_rate), 0) / debtRes.data.length)
+        : 0;
+
+      const totalInflows = (cashFlowRes.data || []).reduce((sum, item) => sum + Number(item.inflows), 0);
+      const totalOutflows = (cashFlowRes.data || []).reduce((sum, item) => sum + Number(item.outflows), 0);
+      const currentCashFlow = totalInflows - totalOutflows;
+
+      const netProfit = totalRevenue - totalExpenses;
+      const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+      
+      const monthlyBurnRate = totalExpenses + monthlyPayments;
+      const runway = monthlyBurnRate > 0 ? Math.max(0, currentCashFlow / monthlyBurnRate) : 0;
+
+      // Calculate KPI stats
+      const kpis = kpiRes.data || [];
+      const onTarget = kpis.filter(k => Number(k.value) >= Number(k.target)).length;
+      const atRisk = kpis.filter(k => {
+        const progress = (Number(k.value) / Number(k.target)) * 100;
+        return progress >= 50 && progress < 100;
+      }).length;
+      const critical = kpis.filter(k => (Number(k.value) / Number(k.target)) * 100 < 50).length;
+      const kpiScore = kpis.length > 0 
+        ? (kpis.reduce((sum, k) => sum + (Number(k.value) / Number(k.target)) * 100, 0) / kpis.length)
+        : 0;
+
+      setDashboardData({
+        revenue: {
+          total: totalRevenue,
+          growth: 15, // Placeholder - would need historical data
+          target: 100000
+        },
+        expenses: {
+          total: totalExpenses,
+          growth: 8, // Placeholder - would need historical data
+          budget: 80000
+        },
+        netProfit: {
+          amount: netProfit,
+          margin: profitMargin,
+          growth: 12 // Placeholder - would need historical data
+        },
+        debt: {
+          total: totalDebt,
+          monthlyPayments: monthlyPayments,
+          avgInterestRate: avgInterestRate
+        },
+        cashFlow: {
+          current: currentCashFlow,
+          projected: currentCashFlow * 1.1, // Simple projection
+          runway: runway
+        },
+        kpis: {
+          onTarget: onTarget,
+          atRisk: atRisk,
+          critical: critical,
+          score: kpiScore
+        }
+      });
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load dashboard data",
+        variant: "destructive",
+      });
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    fetchDashboardData();
+
+    // Set up real-time subscriptions
+    const channel = supabase
+      .channel('dashboard-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'revenue_entries' }, fetchDashboardData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'expense_entries' }, fetchDashboardData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'debt_entries' }, fetchDashboardData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cash_flow_entries' }, fetchDashboardData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'kpi_entries' }, fetchDashboardData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profit_loss_entries' }, fetchDashboardData)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   // Calculate financial health score
   const healthScore = Math.min(100, Math.max(0,
