@@ -192,7 +192,7 @@ export const EditableTable = ({
               type="date"
               value={value}
               onChange={(e) => handleFieldChange(column.key, e.target.value)}
-              className="h-9 sm:h-8 text-xs min-w-[120px] bg-white dark:bg-gray-900 text-foreground [&::-webkit-calendar-picker-indicator]:invert-0 dark:[&::-webkit-calendar-picker-indicator]:invert"
+              className="h-9 sm:h-8 text-xs min-w-[120px] bg-gray-900 text-white border-gray-700 [color-scheme:light] [&::-webkit-calendar-picker-indicator]:filter-none [&::-webkit-calendar-picker-indicator]:cursor-pointer"
             />
           );
         case 'currency':
