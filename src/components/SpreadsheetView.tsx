@@ -2,9 +2,12 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import { 
   FileSpreadsheet,
   DollarSign,
@@ -14,7 +17,9 @@ import {
   TrendingUp,
   BarChart3,
   Target,
-  Brain
+  Brain,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { RevenueSheet } from "./spreadsheet/RevenueSheet";
 import { ExpensesSheet } from "./spreadsheet/ExpensesSheet";
@@ -28,6 +33,44 @@ import { DashboardSheet } from "./spreadsheet/DashboardSheet";
 export const SpreadsheetView = () => {
   const [activeSheet, setActiveSheet] = useState("dashboard");
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [showPassword, setShowPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  const handlePasswordChange = async () => {
+    if (!newPassword || newPassword.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsChangingPassword(true);
+    
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
+      toast({
+        title: "Success",
+        description: "Password updated successfully",
+      });
+      setNewPassword("");
+      setShowPassword(false);
+    }
+
+    setIsChangingPassword(false);
+  };
 
   const sheets = [
     { id: "dashboard", label: "Dashboard", icon: BarChart3, color: "text-accent" },
@@ -93,13 +136,36 @@ export const SpreadsheetView = () => {
                         </div>
                         
                         <div>
-                          <label className="text-sm font-medium text-muted-foreground">Password</label>
-                          <div className="mt-1 p-3 bg-muted rounded-md">
-                            <p className="text-sm">••••••••</p>
+                          <label className="text-sm font-medium text-muted-foreground">Change Password</label>
+                          <div className="mt-1 relative">
+                            <Input
+                              type={showPassword ? "text" : "password"}
+                              placeholder="Enter new password (min 6 characters)"
+                              value={newPassword}
+                              onChange={(e) => setNewPassword(e.target.value)}
+                              className="pr-10"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                              onClick={() => setShowPassword(!showPassword)}
+                            >
+                              {showPassword ? (
+                                <EyeOff className="h-4 w-4 text-muted-foreground" />
+                              ) : (
+                                <Eye className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </Button>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Password is hidden for security reasons
-                          </p>
+                          <Button 
+                            onClick={handlePasswordChange}
+                            disabled={isChangingPassword || !newPassword}
+                            className="mt-2 w-full"
+                          >
+                            {isChangingPassword ? "Updating..." : "Update Password"}
+                          </Button>
                         </div>
                         
                         <Separator />
