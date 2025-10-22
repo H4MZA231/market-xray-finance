@@ -601,7 +601,7 @@ export const DashboardSheet = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {dashboardData.netProfit.margin >= 15 && (
+            {hasData && dashboardData.netProfit.margin >= 15 && (
               <div className="p-4 rounded-lg bg-success/10 border border-success/20">
                 <div className="flex items-center gap-3 mb-2">
                   <CheckCircle className="w-5 h-5 text-success" />
