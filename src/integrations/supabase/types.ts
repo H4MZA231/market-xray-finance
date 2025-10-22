@@ -59,7 +59,7 @@ export type Database = {
         }
         Relationships: []
       }
-      dashboards: {
+      dashboards_entries: {
         Row: {
           burn_rate: number
           cash_flow: number
@@ -68,6 +68,11 @@ export type Database = {
           monthly_debt_payments: number
           net_profit: number
           profit_margin: number
+          recent_cash_flow: number | null
+          recent_expenses: number | null
+          recent_pl: number | null
+          recent_revenue: number | null
+          recent_updated_at: string | null
           runway: number
           total_debt: number
           total_expenses: number
@@ -83,6 +88,11 @@ export type Database = {
           monthly_debt_payments?: number
           net_profit?: number
           profit_margin?: number
+          recent_cash_flow?: number | null
+          recent_expenses?: number | null
+          recent_pl?: number | null
+          recent_revenue?: number | null
+          recent_updated_at?: string | null
           runway?: number
           total_debt?: number
           total_expenses?: number
@@ -98,6 +108,11 @@ export type Database = {
           monthly_debt_payments?: number
           net_profit?: number
           profit_margin?: number
+          recent_cash_flow?: number | null
+          recent_expenses?: number | null
+          recent_pl?: number | null
+          recent_revenue?: number | null
+          recent_updated_at?: string | null
           runway?: number
           total_debt?: number
           total_expenses?: number
@@ -218,6 +233,36 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
           value?: number
+        }
+        Relationships: []
+      }
+      notes: {
+        Row: {
+          category: string
+          content: string | null
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -393,7 +438,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      recalc_dashboards_for_user: {
+        Args: { p_user: string }
+        Returns: undefined
+      }
+      refresh_user_dashboard: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

@@ -22,7 +22,7 @@ import { DebtSheet } from "./spreadsheet/DebtSheet";
 import { ProfitLossSheet } from "./spreadsheet/ProfitLossSheet";
 import { CashFlowSheet } from "./spreadsheet/CashFlowSheet";
 import { KPIsSheet } from "./spreadsheet/KPIsSheet";
-import { AISuggestionsSheet } from "./spreadsheet/AISuggestionsSheet";
+import { NotesSheet } from "./spreadsheet/NotesSheet";
 import { DashboardSheet } from "./spreadsheet/DashboardSheet";
 
 export const SpreadsheetView = () => {
@@ -37,7 +37,7 @@ export const SpreadsheetView = () => {
     { id: "profitloss", label: "P&L", icon: TrendingUp, color: "text-success" },
     { id: "cashflow", label: "Cash Flow", icon: BarChart3, color: "text-accent" },
     { id: "kpis", label: "KPIs/Metrics", icon: Target, color: "text-accent" },
-    { id: "aisuggestions", label: "AI Suggestions", icon: Brain, color: "text-accent" }
+    { id: "notes", label: "Notes", icon: Brain, color: "text-accent" }
   ];
 
   return (
@@ -170,8 +170,8 @@ export const SpreadsheetView = () => {
                 <KPIsSheet />
               </TabsContent>
               
-              <TabsContent value="aisuggestions" className="mt-0">
-                <AISuggestionsSheet />
+              <TabsContent value="notes" className="mt-0">
+                <NotesSheet />
               </TabsContent>
             </div>
           </Tabs>
