@@ -173,13 +173,14 @@ export const DashboardSheet = () => {
     );
   }
 
-  // Calculate financial health score
-  const healthScore = Math.min(100, Math.max(0,
+  // Calculate financial health score - reset to 0 if no data
+  const hasData = dashboardData.revenue.total > 0 || dashboardData.expenses.total > 0;
+  const healthScore = hasData ? Math.min(100, Math.max(0,
     (dashboardData.netProfit.margin * 0.3) +
     (dashboardData.revenue.growth * 2) +
     (dashboardData.cashFlow.runway > 12 ? 20 : dashboardData.cashFlow.runway * 1.5) +
     (dashboardData.kpis.score * 0.2)
-  ));
+  )) : 0;
 
   const getHealthColor = (score: number) => {
     if (score >= 80) return { bg: "bg-success/10", border: "border-success/20", text: "text-success", label: "Excellent" };
@@ -240,7 +241,7 @@ export const DashboardSheet = () => {
             </div>
             <div className="mt-2">
               <div className="text-xs text-muted-foreground">
-                Profit Margin: <span className="text-financial font-semibold">{dashboardData.netProfit.margin}%</span>
+                Profit Margin: <span className="text-financial font-semibold">{Math.round(dashboardData.netProfit.margin)}%</span>
               </div>
             </div>
           </div>
@@ -308,13 +309,13 @@ export const DashboardSheet = () => {
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Current Cash</span>
               <span className="text-financial font-semibold text-accent">
-                ${dashboardData.cashFlow.current.toLocaleString()}
+                ${Math.round(dashboardData.cashFlow.current).toLocaleString()}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Projected (Next Month)</span>
               <span className="text-financial font-semibold text-success">
-                ${dashboardData.cashFlow.projected.toLocaleString()}
+                ${Math.round(dashboardData.cashFlow.projected).toLocaleString()}
               </span>
             </div>
             <div className="flex items-center justify-between">
@@ -323,7 +324,7 @@ export const DashboardSheet = () => {
                 dashboardData.cashFlow.runway > 12 ? 'text-success' : 
                 dashboardData.cashFlow.runway > 6 ? 'text-warning' : 'text-destructive'
               }`}>
-                {dashboardData.cashFlow.runway} months
+                {Math.round(dashboardData.cashFlow.runway)} months
               </span>
             </div>
             <div className="pt-2 border-t border-border">
@@ -355,19 +356,19 @@ export const DashboardSheet = () => {
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Total Outstanding</span>
               <span className="text-financial font-semibold text-destructive">
-                ${dashboardData.debt.total.toLocaleString()}
+                ${Math.round(dashboardData.debt.total).toLocaleString()}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Monthly Payments</span>
               <span className="text-financial font-semibold">
-                ${dashboardData.debt.monthlyPayments.toLocaleString()}
+                ${Math.round(dashboardData.debt.monthlyPayments).toLocaleString()}
               </span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Avg Interest Rate</span>
               <span className="text-financial font-semibold">
-                {dashboardData.debt.avgInterestRate}%
+                {Math.round(dashboardData.debt.avgInterestRate)}%
               </span>
             </div>
             <div className="pt-2 border-t border-border">
@@ -376,7 +377,7 @@ export const DashboardSheet = () => {
                 <span className={`text-financial font-semibold ${
                   (dashboardData.debt.total / dashboardData.revenue.total) < 2 ? 'text-success' : 'text-warning'
                 }`}>
-                  {(dashboardData.debt.total / dashboardData.revenue.total).toFixed(1)}:1
+                  {Math.round(dashboardData.debt.total / dashboardData.revenue.total)}:1
                 </span>
               </div>
             </div>
@@ -424,7 +425,7 @@ export const DashboardSheet = () => {
                   dashboardData.kpis.score >= 80 ? 'text-success' :
                   dashboardData.kpis.score >= 60 ? 'text-warning' : 'text-destructive'
                 }`}>
-                  {dashboardData.kpis.score}%
+                  {Math.round(dashboardData.kpis.score)}%
                 </span>
               </div>
             </div>
@@ -446,13 +447,13 @@ export const DashboardSheet = () => {
             <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
               <span className="text-sm">Profit Margin</span>
               <span className="text-financial font-semibold text-success">
-                {dashboardData.netProfit.margin}%
+                {Math.round(dashboardData.netProfit.margin)}%
               </span>
             </div>
             <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
               <span className="text-sm">Expense Ratio</span>
               <span className="text-financial font-semibold">
-                {((dashboardData.expenses.total / dashboardData.revenue.total) * 100).toFixed(1)}%
+                {Math.round((dashboardData.expenses.total / dashboardData.revenue.total) * 100)}%
               </span>
             </div>
             <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
@@ -460,7 +461,7 @@ export const DashboardSheet = () => {
               <span className={`text-financial font-semibold ${
                 (dashboardData.netProfit.amount / (dashboardData.debt.monthlyPayments * 12)) > 1.5 ? 'text-success' : 'text-warning'
               }`}>
-                {(dashboardData.netProfit.amount / (dashboardData.debt.monthlyPayments * 12)).toFixed(1)}x
+                {Math.round(dashboardData.netProfit.amount / (dashboardData.debt.monthlyPayments * 12))}x
               </span>
             </div>
           </div>
