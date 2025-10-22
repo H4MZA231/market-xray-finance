@@ -437,34 +437,55 @@ export const DashboardSheet = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="card-elegant p-6">
           <h3 className="font-semibold mb-4">Key Financial Ratios</h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
-              <span className="text-sm">Revenue Growth Rate</span>
-              <span className="text-financial font-semibold text-success">
-                +{dashboardData.revenue.growth}%
-              </span>
+          {!hasData ? (
+            <div className="p-8 text-center">
+              <p className="text-muted-foreground">
+                Add revenue and expense data to see your financial ratios.
+              </p>
             </div>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
-              <span className="text-sm">Profit Margin</span>
-              <span className="text-financial font-semibold text-success">
-                {Math.round(dashboardData.netProfit.margin)}%
-              </span>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
+                <span className="text-sm">Revenue Growth Rate</span>
+                <span className={`text-financial font-semibold ${
+                  dashboardData.revenue.growth >= 10 ? 'text-success' :
+                  dashboardData.revenue.growth >= 5 ? 'text-warning' : 'text-destructive'
+                }`}>
+                  {dashboardData.revenue.growth > 0 ? '+' : ''}{dashboardData.revenue.growth}%
+                </span>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
+                <span className="text-sm">Profit Margin</span>
+                <span className={`text-financial font-semibold ${
+                  dashboardData.netProfit.margin >= 15 ? 'text-success' :
+                  dashboardData.netProfit.margin >= 5 ? 'text-warning' : 'text-destructive'
+                }`}>
+                  {Math.round(dashboardData.netProfit.margin)}%
+                </span>
+              </div>
+              {dashboardData.revenue.total > 0 && (
+                <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
+                  <span className="text-sm">Expense Ratio</span>
+                  <span className={`text-financial font-semibold ${
+                    ((dashboardData.expenses.total / dashboardData.revenue.total) * 100) < 70 ? 'text-success' :
+                    ((dashboardData.expenses.total / dashboardData.revenue.total) * 100) < 85 ? 'text-warning' : 'text-destructive'
+                  }`}>
+                    {Math.round((dashboardData.expenses.total / dashboardData.revenue.total) * 100)}%
+                  </span>
+                </div>
+              )}
+              {dashboardData.debt.monthlyPayments > 0 && (
+                <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
+                  <span className="text-sm">Debt Service Coverage</span>
+                  <span className={`text-financial font-semibold ${
+                    (dashboardData.netProfit.amount / (dashboardData.debt.monthlyPayments * 12)) > 1.5 ? 'text-success' : 'text-warning'
+                  }`}>
+                    {Math.round(dashboardData.netProfit.amount / (dashboardData.debt.monthlyPayments * 12))}x
+                  </span>
+                </div>
+              )}
             </div>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
-              <span className="text-sm">Expense Ratio</span>
-              <span className="text-financial font-semibold">
-                {Math.round((dashboardData.expenses.total / dashboardData.revenue.total) * 100)}%
-              </span>
-            </div>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
-              <span className="text-sm">Debt Service Coverage</span>
-              <span className={`text-financial font-semibold ${
-                (dashboardData.netProfit.amount / (dashboardData.debt.monthlyPayments * 12)) > 1.5 ? 'text-success' : 'text-warning'
-              }`}>
-                {Math.round(dashboardData.netProfit.amount / (dashboardData.debt.monthlyPayments * 12))}x
-              </span>
-            </div>
-          </div>
+          )}
         </Card>
 
         <Card className="card-elegant p-6">
@@ -473,36 +494,96 @@ export const DashboardSheet = () => {
             <div className="flex items-center justify-between">
               <span className="text-sm">Revenue Growth</span>
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-success" />
-                <span className="text-xs text-success">Strong</span>
+                <div className={`w-2 h-2 rounded-full ${
+                  !hasData ? 'bg-muted-foreground' :
+                  dashboardData.revenue.growth >= 10 ? 'bg-success' :
+                  dashboardData.revenue.growth >= 5 ? 'bg-warning' : 'bg-destructive'
+                }`} />
+                <span className={`text-xs ${
+                  !hasData ? 'text-muted-foreground' :
+                  dashboardData.revenue.growth >= 10 ? 'text-success' :
+                  dashboardData.revenue.growth >= 5 ? 'text-warning' : 'text-destructive'
+                }`}>
+                  {!hasData ? 'No Data' :
+                   dashboardData.revenue.growth >= 10 ? 'Strong' :
+                   dashboardData.revenue.growth >= 5 ? 'Moderate' : 'Weak'}
+                </span>
               </div>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm">Profitability</span>
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-success" />
-                <span className="text-xs text-success">Excellent</span>
+                <div className={`w-2 h-2 rounded-full ${
+                  !hasData ? 'bg-muted-foreground' :
+                  dashboardData.netProfit.margin >= 20 ? 'bg-success' :
+                  dashboardData.netProfit.margin >= 10 ? 'bg-warning' : 'bg-destructive'
+                }`} />
+                <span className={`text-xs ${
+                  !hasData ? 'text-muted-foreground' :
+                  dashboardData.netProfit.margin >= 20 ? 'text-success' :
+                  dashboardData.netProfit.margin >= 10 ? 'text-warning' : 'text-destructive'
+                }`}>
+                  {!hasData ? 'No Data' :
+                   dashboardData.netProfit.margin >= 20 ? 'Excellent' :
+                   dashboardData.netProfit.margin >= 10 ? 'Good' : 'Poor'}
+                </span>
               </div>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm">Cash Position</span>
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-success" />
-                <span className="text-xs text-success">Healthy</span>
+                <div className={`w-2 h-2 rounded-full ${
+                  !hasData ? 'bg-muted-foreground' :
+                  dashboardData.cashFlow.runway > 12 ? 'bg-success' :
+                  dashboardData.cashFlow.runway > 6 ? 'bg-warning' : 'bg-destructive'
+                }`} />
+                <span className={`text-xs ${
+                  !hasData ? 'text-muted-foreground' :
+                  dashboardData.cashFlow.runway > 12 ? 'text-success' :
+                  dashboardData.cashFlow.runway > 6 ? 'text-warning' : 'text-destructive'
+                }`}>
+                  {!hasData ? 'No Data' :
+                   dashboardData.cashFlow.runway > 12 ? 'Healthy' :
+                   dashboardData.cashFlow.runway > 6 ? 'Adequate' : 'Critical'}
+                </span>
               </div>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm">Debt Management</span>
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-warning" />
-                <span className="text-xs text-warning">Moderate</span>
+                <div className={`w-2 h-2 rounded-full ${
+                  !hasData || dashboardData.debt.total === 0 ? 'bg-muted-foreground' :
+                  (dashboardData.debt.total / dashboardData.revenue.total) < 1 ? 'bg-success' :
+                  (dashboardData.debt.total / dashboardData.revenue.total) < 2 ? 'bg-warning' : 'bg-destructive'
+                }`} />
+                <span className={`text-xs ${
+                  !hasData || dashboardData.debt.total === 0 ? 'text-muted-foreground' :
+                  (dashboardData.debt.total / dashboardData.revenue.total) < 1 ? 'text-success' :
+                  (dashboardData.debt.total / dashboardData.revenue.total) < 2 ? 'text-warning' : 'text-destructive'
+                }`}>
+                  {!hasData || dashboardData.debt.total === 0 ? 'No Data' :
+                   (dashboardData.debt.total / dashboardData.revenue.total) < 1 ? 'Excellent' :
+                   (dashboardData.debt.total / dashboardData.revenue.total) < 2 ? 'Moderate' : 'High Risk'}
+                </span>
               </div>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm">Operational Efficiency</span>
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-success" />
-                <span className="text-xs text-success">Good</span>
+                <div className={`w-2 h-2 rounded-full ${
+                  !hasData ? 'bg-muted-foreground' :
+                  dashboardData.kpis.score >= 80 ? 'bg-success' :
+                  dashboardData.kpis.score >= 60 ? 'bg-warning' : 'bg-destructive'
+                }`} />
+                <span className={`text-xs ${
+                  !hasData ? 'text-muted-foreground' :
+                  dashboardData.kpis.score >= 80 ? 'text-success' :
+                  dashboardData.kpis.score >= 60 ? 'text-warning' : 'text-destructive'
+                }`}>
+                  {!hasData ? 'No Data' :
+                   dashboardData.kpis.score >= 80 ? 'Good' :
+                   dashboardData.kpis.score >= 60 ? 'Fair' : 'Needs Work'}
+                </span>
               </div>
             </div>
           </div>
@@ -512,35 +593,99 @@ export const DashboardSheet = () => {
       {/* Quick Actions */}
       <Card className="card-elegant p-6">
         <h3 className="font-semibold mb-4">Recommended Actions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 rounded-lg bg-success/10 border border-success/20">
-            <div className="flex items-center gap-3 mb-2">
-              <CheckCircle className="w-5 h-5 text-success" />
-              <span className="font-medium text-success">Revenue Optimization</span>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Strong profit margins allow for strategic reinvestment in growth initiatives.
+        {!hasData ? (
+          <div className="p-8 text-center">
+            <p className="text-muted-foreground">
+              Add financial data to receive personalized recommendations for your business.
             </p>
           </div>
-          <div className="p-4 rounded-lg bg-warning/10 border border-warning/20">
-            <div className="flex items-center gap-3 mb-2">
-              <AlertTriangle className="w-5 h-5 text-warning" />
-              <span className="font-medium text-warning">Debt Refinancing</span>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Consider refinancing high-interest debt to reduce monthly obligations.
-            </p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {dashboardData.netProfit.margin >= 15 && (
+              <div className="p-4 rounded-lg bg-success/10 border border-success/20">
+                <div className="flex items-center gap-3 mb-2">
+                  <CheckCircle className="w-5 h-5 text-success" />
+                  <span className="font-medium text-success">Revenue Optimization</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Strong profit margins allow for strategic reinvestment in growth initiatives.
+                </p>
+              </div>
+            )}
+            
+            {dashboardData.netProfit.margin < 10 && dashboardData.revenue.total > 0 && (
+              <div className="p-4 rounded-lg bg-warning/10 border border-warning/20">
+                <div className="flex items-center gap-3 mb-2">
+                  <AlertTriangle className="w-5 h-5 text-warning" />
+                  <span className="font-medium text-warning">Improve Profitability</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Consider reducing expenses or increasing prices to improve profit margins.
+                </p>
+              </div>
+            )}
+            
+            {dashboardData.debt.avgInterestRate > 7 && dashboardData.debt.total > 0 && (
+              <div className="p-4 rounded-lg bg-warning/10 border border-warning/20">
+                <div className="flex items-center gap-3 mb-2">
+                  <AlertTriangle className="w-5 h-5 text-warning" />
+                  <span className="font-medium text-warning">Debt Refinancing</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  High interest rates detected. Consider refinancing to reduce monthly obligations.
+                </p>
+              </div>
+            )}
+            
+            {dashboardData.cashFlow.runway < 6 && dashboardData.cashFlow.runway > 0 && (
+              <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+                <div className="flex items-center gap-3 mb-2">
+                  <AlertTriangle className="w-5 h-5 text-destructive" />
+                  <span className="font-medium text-destructive">Cash Flow Alert</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Limited runway detected. Focus on increasing revenue and managing expenses.
+                </p>
+              </div>
+            )}
+            
+            {dashboardData.kpis.critical > 0 && (
+              <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+                <div className="flex items-center gap-3 mb-2">
+                  <Target className="w-5 h-5 text-destructive" />
+                  <span className="font-medium text-destructive">KPI Attention Needed</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {dashboardData.kpis.critical} critical KPI{dashboardData.kpis.critical > 1 ? 's' : ''} need immediate attention.
+                </p>
+              </div>
+            )}
+            
+            {dashboardData.kpis.score >= 80 && (
+              <div className="p-4 rounded-lg bg-success/10 border border-success/20">
+                <div className="flex items-center gap-3 mb-2">
+                  <CheckCircle className="w-5 h-5 text-success" />
+                  <span className="font-medium text-success">Excellent KPI Performance</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Most KPIs are on target. Continue monitoring and maintaining performance.
+                </p>
+              </div>
+            )}
+            
+            {dashboardData.revenue.growth < 5 && dashboardData.revenue.total > 0 && (
+              <div className="p-4 rounded-lg bg-warning/10 border border-warning/20">
+                <div className="flex items-center gap-3 mb-2">
+                  <TrendingUp className="w-5 h-5 text-warning" />
+                  <span className="font-medium text-warning">Growth Strategy</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Revenue growth is below target. Consider new marketing or sales strategies.
+                </p>
+              </div>
+            )}
           </div>
-          <div className="p-4 rounded-lg bg-accent/10 border border-accent/20">
-            <div className="flex items-center gap-3 mb-2">
-              <Target className="w-5 h-5 text-accent" />
-              <span className="font-medium text-accent">KPI Monitoring</span>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Focus on improving Customer Acquisition Cost and operational KPIs.
-            </p>
-          </div>
-        </div>
+        )}
       </Card>
     </div>
   );
