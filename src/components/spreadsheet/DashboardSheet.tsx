@@ -11,16 +11,26 @@ import {
   CheckCircle,
   Target,
   BarChart3,
-  Loader2
+  Loader2,
+  StickyNote
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 
+interface Note {
+  id: string;
+  title: string;
+  content: string | null;
+  category: string;
+  created_at: string;
+}
+
 export const DashboardSheet = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+  const [notes, setNotes] = useState<Note[]>([]);
   const [dashboardData, setDashboardData] = useState({
     revenue: {
       total: 0,
@@ -60,13 +70,17 @@ export const DashboardSheet = () => {
       if (!user) return;
 
       // Fetch all financial data in parallel
-      const [revenueRes, expensesRes, debtRes, cashFlowRes, kpiRes] = await Promise.all([
+      const [revenueRes, expensesRes, debtRes, cashFlowRes, kpiRes, notesRes] = await Promise.all([
         supabase.from('revenue_entries').select('amount').eq('user_id', user.id),
         supabase.from('expense_entries').select('amount').eq('user_id', user.id),
         supabase.from('debt_entries').select('current_balance, monthly_payment, interest_rate').eq('user_id', user.id),
         supabase.from('cash_flow_entries').select('inflows, outflows').eq('user_id', user.id),
-        supabase.from('kpi_entries').select('value, target').eq('user_id', user.id)
+        supabase.from('kpi_entries').select('value, target').eq('user_id', user.id),
+        supabase.from('notes').select('id, title, content, category, created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(3)
       ]);
+
+      // Set notes
+      setNotes(notesRes.data || []);
 
       // Calculate totals
       const totalRevenue = (revenueRes.data || []).reduce((sum, item) => sum + Number(item.amount), 0);
@@ -158,6 +172,7 @@ export const DashboardSheet = () => {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cash_flow_entries' }, fetchDashboardData)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'kpi_entries' }, fetchDashboardData)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profit_loss_entries' }, fetchDashboardData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notes' }, fetchDashboardData)
       .subscribe();
 
     return () => {
@@ -590,100 +605,38 @@ export const DashboardSheet = () => {
         </Card>
       </div>
 
-      {/* Quick Actions */}
+      {/* Recent Notes */}
       <Card className="card-elegant p-6">
-        <h3 className="font-semibold mb-4">Recommended Actions</h3>
-        {!hasData ? (
+        <h3 className="font-semibold mb-4 flex items-center gap-2">
+          <StickyNote className="w-5 h-5 text-accent" />
+          Recent Notes
+        </h3>
+        {notes.length === 0 ? (
           <div className="p-8 text-center">
             <p className="text-muted-foreground">
-              Add financial data to receive personalized recommendations for your business.
+              No notes yet. Create your first note in the Notes tab to see it here.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {hasData && dashboardData.netProfit.margin >= 15 && (
-              <div className="p-4 rounded-lg bg-success/10 border border-success/20">
-                <div className="flex items-center gap-3 mb-2">
-                  <CheckCircle className="w-5 h-5 text-success" />
-                  <span className="font-medium text-success">Revenue Optimization</span>
+            {notes.map((note) => (
+              <div key={note.id} className="p-4 rounded-lg bg-secondary/30 border border-border hover:border-accent/50 transition-colors">
+                <div className="flex items-start justify-between mb-2">
+                  <h4 className="font-medium text-foreground line-clamp-1">{note.title}</h4>
+                  <Badge variant="outline" className="text-xs shrink-0 ml-2">
+                    {note.category}
+                  </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Strong profit margins allow for strategic reinvestment in growth initiatives.
+                {note.content && (
+                  <p className="text-sm text-muted-foreground line-clamp-3 mb-2">
+                    {note.content}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  {new Date(note.created_at).toLocaleDateString()}
                 </p>
               </div>
-            )}
-            
-            {dashboardData.netProfit.margin < 10 && dashboardData.revenue.total > 0 && (
-              <div className="p-4 rounded-lg bg-warning/10 border border-warning/20">
-                <div className="flex items-center gap-3 mb-2">
-                  <AlertTriangle className="w-5 h-5 text-warning" />
-                  <span className="font-medium text-warning">Improve Profitability</span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Consider reducing expenses or increasing prices to improve profit margins.
-                </p>
-              </div>
-            )}
-            
-            {dashboardData.debt.avgInterestRate > 7 && dashboardData.debt.total > 0 && (
-              <div className="p-4 rounded-lg bg-warning/10 border border-warning/20">
-                <div className="flex items-center gap-3 mb-2">
-                  <AlertTriangle className="w-5 h-5 text-warning" />
-                  <span className="font-medium text-warning">Debt Refinancing</span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  High interest rates detected. Consider refinancing to reduce monthly obligations.
-                </p>
-              </div>
-            )}
-            
-            {dashboardData.cashFlow.runway < 6 && dashboardData.cashFlow.runway > 0 && (
-              <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
-                <div className="flex items-center gap-3 mb-2">
-                  <AlertTriangle className="w-5 h-5 text-destructive" />
-                  <span className="font-medium text-destructive">Cash Flow Alert</span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Limited runway detected. Focus on increasing revenue and managing expenses.
-                </p>
-              </div>
-            )}
-            
-            {dashboardData.kpis.critical > 0 && (
-              <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
-                <div className="flex items-center gap-3 mb-2">
-                  <Target className="w-5 h-5 text-destructive" />
-                  <span className="font-medium text-destructive">KPI Attention Needed</span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {dashboardData.kpis.critical} critical KPI{dashboardData.kpis.critical > 1 ? 's' : ''} need immediate attention.
-                </p>
-              </div>
-            )}
-            
-            {dashboardData.kpis.score >= 80 && (
-              <div className="p-4 rounded-lg bg-success/10 border border-success/20">
-                <div className="flex items-center gap-3 mb-2">
-                  <CheckCircle className="w-5 h-5 text-success" />
-                  <span className="font-medium text-success">Excellent KPI Performance</span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Most KPIs are on target. Continue monitoring and maintaining performance.
-                </p>
-              </div>
-            )}
-            
-            {dashboardData.revenue.growth < 5 && dashboardData.revenue.total > 0 && (
-              <div className="p-4 rounded-lg bg-warning/10 border border-warning/20">
-                <div className="flex items-center gap-3 mb-2">
-                  <TrendingUp className="w-5 h-5 text-warning" />
-                  <span className="font-medium text-warning">Growth Strategy</span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Revenue growth is below target. Consider new marketing or sales strategies.
-                </p>
-              </div>
-            )}
+            ))}
           </div>
         )}
       </Card>
