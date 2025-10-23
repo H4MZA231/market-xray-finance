@@ -14,21 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      businesses: {
-        Row: {
-          created_at: string
-          id: number
-        }
-        Insert: {
-          created_at?: string
-          id?: number
-        }
-        Update: {
-          created_at?: string
-          id?: number
-        }
-        Relationships: []
-      }
       cash_flow_entries: {
         Row: {
           created_at: string | null
@@ -266,21 +251,6 @@ export type Database = {
         }
         Relationships: []
       }
-      People: {
-        Row: {
-          created_at: string
-          id: number
-        }
-        Insert: {
-          created_at?: string
-          id?: number
-        }
-        Update: {
-          created_at?: string
-          id?: number
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -412,24 +382,6 @@ export type Database = {
           notes?: string | null
           updated_at?: string | null
           user_id?: string
-        }
-        Relationships: []
-      }
-      user_id: {
-        Row: {
-          created_at: string
-          id: number
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          id?: number
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          id?: number
-          user_id?: string | null
         }
         Relationships: []
       }
