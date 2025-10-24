@@ -287,69 +287,71 @@ export const CashFlowSheet = () => {
       />
 
       {/* Cash Flow Analysis */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="p-6 card-elegant">
-          <h4 className="font-semibold mb-4">Monthly Cash Flow Trend</h4>
-          <div className="space-y-3">
-            {cashFlowData
-              .sort((a, b) => a.month.localeCompare(b.month))
-              .map((month) => {
-                const netFlow = Number(month.projectedRevenue || 0) - Number(month.projectedExpenses || 0);
-                
-                return (
-                  <div key={month.id} className="flex items-center justify-between">
-                    <span className="text-sm">{month.month}</span>
-                    <div className="flex items-center gap-3">
-                      <div className={`text-xs px-2 py-1 rounded ${
-                        netFlow > 0 ? 'bg-success/20 text-success' : 
-                        netFlow === 0 ? 'bg-warning/20 text-warning' :
-                        'bg-destructive/20 text-destructive'
-                      }`}>
-                        {netFlow > 0 ? 'Positive' : netFlow === 0 ? 'Break-even' : 'Negative'}
+      {cashFlowData.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="p-6 card-elegant">
+            <h4 className="font-semibold mb-4">Monthly Cash Flow Trend</h4>
+            <div className="space-y-3">
+              {cashFlowData
+                .sort((a, b) => a.month.localeCompare(b.month))
+                .map((month) => {
+                  const netFlow = Number(month.projectedRevenue || 0) - Number(month.projectedExpenses || 0);
+                  
+                  return (
+                    <div key={month.id} className="flex items-center justify-between">
+                      <span className="text-sm">{month.month}</span>
+                      <div className="flex items-center gap-3">
+                        <div className={`text-xs px-2 py-1 rounded ${
+                          netFlow > 0 ? 'bg-success/20 text-success' : 
+                          netFlow === 0 ? 'bg-warning/20 text-warning' :
+                          'bg-destructive/20 text-destructive'
+                        }`}>
+                          {netFlow > 0 ? 'Positive' : netFlow === 0 ? 'Break-even' : 'Negative'}
+                        </div>
+                        <span className={`text-financial font-semibold ${
+                          netFlow > 0 ? 'text-success' : 
+                          netFlow === 0 ? 'text-warning' : 'text-destructive'
+                        }`}>
+                          ${netFlow.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        </span>
                       </div>
-                      <span className={`text-financial font-semibold ${
-                        netFlow > 0 ? 'text-success' : 
-                        netFlow === 0 ? 'text-warning' : 'text-destructive'
-                      }`}>
-                        ${netFlow.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                      </span>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+            </div>
           </div>
-        </div>
 
-        <div className="p-6 card-elegant">
-          <h4 className="font-semibold mb-4">Cash Management Tips</h4>
-          <div className="space-y-3 text-sm">
-            {netCashFlow < 0 && (
-              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-                <div className="font-medium text-destructive mb-1">⚠️ Negative Cash Flow</div>
-                <div className="text-muted-foreground">Consider reducing expenses or increasing revenue to improve cash position.</div>
-              </div>
-            )}
-            {runway < 12 && runway !== Infinity && (
-              <div className="p-3 rounded-lg bg-warning/10 border border-warning/20">
-                <div className="font-medium text-warning mb-1">🚨 Short Runway</div>
-                <div className="text-muted-foreground">Less than 12 months of cash remaining. Plan for funding or cost reduction.</div>
-              </div>
-            )}
-            {finalCashBalance > startingCashBalance * 1.5 && (
-              <div className="p-3 rounded-lg bg-success/10 border border-success/20">
-                <div className="font-medium text-success mb-1">💰 Cash Growth</div>
-                <div className="text-muted-foreground">Strong cash accumulation. Consider strategic investments or expansion.</div>
-              </div>
-            )}
-            <div className="p-3 rounded-lg bg-accent/10 border border-accent/20">
-              <div className="font-medium text-accent mb-1">📊 Recommendation</div>
-              <div className="text-muted-foreground">
-                Maintain 3-6 months of expenses in cash reserves for business stability.
+          <div className="p-6 card-elegant">
+            <h4 className="font-semibold mb-4">Cash Management Tips</h4>
+            <div className="space-y-3 text-sm">
+              {netCashFlow < 0 && (
+                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                  <div className="font-medium text-destructive mb-1">⚠️ Negative Cash Flow</div>
+                  <div className="text-muted-foreground">Consider reducing expenses or increasing revenue to improve cash position.</div>
+                </div>
+              )}
+              {runway < 12 && runway !== Infinity && (
+                <div className="p-3 rounded-lg bg-warning/10 border border-warning/20">
+                  <div className="font-medium text-warning mb-1">🚨 Short Runway</div>
+                  <div className="text-muted-foreground">Less than 12 months of cash remaining. Plan for funding or cost reduction.</div>
+                </div>
+              )}
+              {finalCashBalance > startingCashBalance * 1.5 && (
+                <div className="p-3 rounded-lg bg-success/10 border border-success/20">
+                  <div className="font-medium text-success mb-1">💰 Cash Growth</div>
+                  <div className="text-muted-foreground">Strong cash accumulation. Consider strategic investments or expansion.</div>
+                </div>
+              )}
+              <div className="p-3 rounded-lg bg-accent/10 border border-accent/20">
+                <div className="font-medium text-accent mb-1">📊 Recommendation</div>
+                <div className="text-muted-foreground">
+                  Maintain 3-6 months of expenses in cash reserves for business stability.
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

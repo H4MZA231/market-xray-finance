@@ -266,157 +266,159 @@ export const KPIsSheet = () => {
       />
 
       {/* KPI Analysis */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="p-6 card-elegant">
-          <h4 className="font-semibold mb-4">Performance by Category</h4>
-          <div className="space-y-4">
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm">Financial Metrics</span>
-                <span className="text-xs text-muted-foreground">4 metrics</span>
-              </div>
-              {kpiData
-                .filter(kpi => 
-                  kpi.metricName?.toLowerCase().includes('revenue') ||
-                  kpi.metricName?.toLowerCase().includes('profit') ||
-                  kpi.metricName?.toLowerCase().includes('runway') ||
-                  kpi.metricName?.toLowerCase().includes('ratio')
-                )
-                .map(kpi => {
-                  const value = Number(kpi.value || 0);
-                  const target = Number(kpi.target || 0);
-                  const percentage = target > 0 ? (value / target) * 100 : 0;
-                  
-                  return (
-                    <div key={kpi.id} className="flex items-center justify-between text-sm">
-                      <span className="truncate">{kpi.metricName}</span>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${
-                          percentage >= 100 ? 'bg-success' :
-                          percentage >= 80 ? 'bg-warning' : 'bg-destructive'
-                        }`} />
-                        <span className="text-financial text-xs">
-                          {percentage.toFixed(0)}%
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-            
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm">Customer Metrics</span>
-                <span className="text-xs text-muted-foreground">3 metrics</span>
-              </div>
-              {kpiData
-                .filter(kpi => 
-                  kpi.metricName?.toLowerCase().includes('customer') ||
-                  kpi.metricName?.toLowerCase().includes('cost') ||
-                  kpi.metricName?.toLowerCase().includes('value')
-                )
-                .map(kpi => {
-                  const value = Number(kpi.value || 0);
-                  const target = Number(kpi.target || 0);
-                  const percentage = target > 0 ? (value / target) * 100 : 0;
-                  
-                  return (
-                    <div key={kpi.id} className="flex items-center justify-between text-sm">
-                      <span className="truncate">{kpi.metricName}</span>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${
-                          percentage >= 100 ? 'bg-success' :
-                          percentage >= 80 ? 'bg-warning' : 'bg-destructive'
-                        }`} />
-                        <span className="text-financial text-xs">
-                          {percentage.toFixed(0)}%
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6 card-elegant">
-          <h4 className="font-semibold mb-4">Priority Actions</h4>
-          <div className="space-y-3">
-            {/* Critical KPIs that need immediate attention */}
-            {kpiData
-              .filter(kpi => {
-                const value = Number(kpi.value || 0);
-                const target = Number(kpi.target || 0);
-                const percentage = target > 0 ? (value / target) * 100 : 0;
-                
-                if (kpi.metricName?.toLowerCase().includes('cost') || 
-                    kpi.metricName?.toLowerCase().includes('ratio')) {
-                  return percentage > 120;
-                }
-                return percentage < 80;
-              })
-              .slice(0, 3)
-              .map(kpi => (
-                <div key={kpi.id} className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-                  <div className="font-medium text-destructive text-sm mb-1">
-                    🚨 {kpi.metricName}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Current: {kpi.value} | Target: {kpi.target}
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Requires immediate attention to reach target.
-                  </div>
+      {kpiData.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="p-6 card-elegant">
+            <h4 className="font-semibold mb-4">Performance by Category</h4>
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm">Financial Metrics</span>
+                  <span className="text-xs text-muted-foreground">4 metrics</span>
                 </div>
-              ))}
-            
-            {/* Warning KPIs */}
-            {kpiData
-              .filter(kpi => {
-                const value = Number(kpi.value || 0);
-                const target = Number(kpi.target || 0);
-                const percentage = target > 0 ? (value / target) * 100 : 0;
-                
-                if (kpi.metricName?.toLowerCase().includes('cost') || 
-                    kpi.metricName?.toLowerCase().includes('ratio')) {
-                  return percentage > 100 && percentage <= 120;
-                }
-                return percentage >= 80 && percentage < 100;
-              })
-              .slice(0, 2)
-              .map(kpi => (
-                <div key={kpi.id} className="p-3 rounded-lg bg-warning/10 border border-warning/20">
-                  <div className="font-medium text-warning text-sm mb-1">
-                    ⚠️ {kpi.metricName}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    Current: {kpi.value} | Target: {kpi.target}
-                  </div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Monitor closely to prevent decline.
-                  </div>
-                </div>
-              ))}
+                {kpiData
+                  .filter(kpi => 
+                    kpi.metricName?.toLowerCase().includes('revenue') ||
+                    kpi.metricName?.toLowerCase().includes('profit') ||
+                    kpi.metricName?.toLowerCase().includes('runway') ||
+                    kpi.metricName?.toLowerCase().includes('ratio')
+                  )
+                  .map(kpi => {
+                    const value = Number(kpi.value || 0);
+                    const target = Number(kpi.target || 0);
+                    const percentage = target > 0 ? (value / target) * 100 : 0;
+                    
+                    return (
+                      <div key={kpi.id} className="flex items-center justify-between text-sm">
+                        <span className="truncate">{kpi.metricName}</span>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${
+                            percentage >= 100 ? 'bg-success' :
+                            percentage >= 80 ? 'bg-warning' : 'bg-destructive'
+                          }`} />
+                          <span className="text-financial text-xs">
+                            {percentage.toFixed(0)}%
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
               
-            {/* If no critical issues, show positive message */}
-            {kpiData.filter(kpi => {
-              const value = Number(kpi.value || 0);
-              const target = Number(kpi.target || 0);
-              const percentage = target > 0 ? (value / target) * 100 : 0;
-              return percentage < 80;
-            }).length === 0 && (
-              <div className="p-3 rounded-lg bg-success/10 border border-success/20">
-                <div className="font-medium text-success text-sm mb-1">
-                  ✅ Strong Performance
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm">Customer Metrics</span>
+                  <span className="text-xs text-muted-foreground">3 metrics</span>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  All KPIs are meeting or approaching targets. Continue monitoring and optimizing.
-                </div>
+                {kpiData
+                  .filter(kpi => 
+                    kpi.metricName?.toLowerCase().includes('customer') ||
+                    kpi.metricName?.toLowerCase().includes('cost') ||
+                    kpi.metricName?.toLowerCase().includes('value')
+                  )
+                  .map(kpi => {
+                    const value = Number(kpi.value || 0);
+                    const target = Number(kpi.target || 0);
+                    const percentage = target > 0 ? (value / target) * 100 : 0;
+                    
+                    return (
+                      <div key={kpi.id} className="flex items-center justify-between text-sm">
+                        <span className="truncate">{kpi.metricName}</span>
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${
+                            percentage >= 100 ? 'bg-success' :
+                            percentage >= 80 ? 'bg-warning' : 'bg-destructive'
+                          }`} />
+                          <span className="text-financial text-xs">
+                            {percentage.toFixed(0)}%
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
-            )}
+            </div>
+          </div>
+
+          <div className="p-6 card-elegant">
+            <h4 className="font-semibold mb-4">Priority Actions</h4>
+            <div className="space-y-3">
+              {/* Critical KPIs that need immediate attention */}
+              {kpiData
+                .filter(kpi => {
+                  const value = Number(kpi.value || 0);
+                  const target = Number(kpi.target || 0);
+                  const percentage = target > 0 ? (value / target) * 100 : 0;
+                  
+                  if (kpi.metricName?.toLowerCase().includes('cost') || 
+                      kpi.metricName?.toLowerCase().includes('ratio')) {
+                    return percentage > 120;
+                  }
+                  return percentage < 80;
+                })
+                .slice(0, 3)
+                .map(kpi => (
+                  <div key={kpi.id} className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                    <div className="font-medium text-destructive text-sm mb-1">
+                      🚨 {kpi.metricName}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Current: {kpi.value} | Target: {kpi.target}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Requires immediate attention to reach target.
+                    </div>
+                  </div>
+                ))}
+              
+              {/* Warning KPIs */}
+              {kpiData
+                .filter(kpi => {
+                  const value = Number(kpi.value || 0);
+                  const target = Number(kpi.target || 0);
+                  const percentage = target > 0 ? (value / target) * 100 : 0;
+                  
+                  if (kpi.metricName?.toLowerCase().includes('cost') || 
+                      kpi.metricName?.toLowerCase().includes('ratio')) {
+                    return percentage > 100 && percentage <= 120;
+                  }
+                  return percentage >= 80 && percentage < 100;
+                })
+                .slice(0, 2)
+                .map(kpi => (
+                  <div key={kpi.id} className="p-3 rounded-lg bg-warning/10 border border-warning/20">
+                    <div className="font-medium text-warning text-sm mb-1">
+                      ⚠️ {kpi.metricName}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Current: {kpi.value} | Target: {kpi.target}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Monitor closely to prevent decline.
+                    </div>
+                  </div>
+                ))}
+                
+              {/* If no critical issues, show positive message */}
+              {kpiData.filter(kpi => {
+                const value = Number(kpi.value || 0);
+                const target = Number(kpi.target || 0);
+                const percentage = target > 0 ? (value / target) * 100 : 0;
+                return percentage < 80;
+              }).length === 0 && (
+                <div className="p-3 rounded-lg bg-success/10 border border-success/20">
+                  <div className="font-medium text-success text-sm mb-1">
+                    ✅ Strong Performance
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    All KPIs are meeting or approaching targets. Continue monitoring and optimizing.
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
